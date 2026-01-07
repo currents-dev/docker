@@ -1,0 +1,48 @@
+name: Check Compose Files Sync
+
+on:
+  push:
+    paths:
+      - 'on-prem/templates/**'
+      - 'on-prem/scripts/generate-compose.sh'
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/docker-compose.database.yml'
+      - 'on-prem/docker-compose.cache.yml'
+  pull_request:
+    paths:
+      - 'on-prem/templates/**'
+      - 'on-prem/scripts/generate-compose.sh'
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/docker-compose.database.yml'
+      - 'on-prem/docker-compose.cache.yml'
+
+jobs:
+  check-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate compose files
+        working-directory: on-prem
+        run: |
+          ./scripts/generate-compose.sh full
+          ./scripts/generate-compose.sh database
+          ./scripts/generate-compose.sh cache
+
+      - name: Check for differences
+        working-directory: on-prem
+        run: |
+          if ! git diff --exit-code docker-compose.full.yml docker-compose.database.yml docker-compose.cache.yml; then
+            echo ""
+            echo "❌ Generated compose files are out of sync with committed files!"
+            echo ""
+            echo "To fix this, run the following commands and commit the changes:"
+            echo "  cd on-prem"
+            echo "  ./scripts/generate-compose.sh full"
+            echo "  ./scripts/generate-compose.sh database"
+            echo "  ./scripts/generate-compose.sh cache"
+            exit 1
+          fi
+          echo "✅ All compose files are in sync"
+

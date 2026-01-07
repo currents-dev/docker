@@ -1,0 +1,64 @@
+# MongoDB service configuration
+# Primary database for application data
+
+services:
+  mongodb:
+    hostname: mongodb
+    image: mongo:7.0.0
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    restart: unless-stopped
+    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
+    networks:
+      - default
+    healthcheck:
+      test:
+        - 'CMD-SHELL'
+        - (echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh localhost:27017 --quiet) && mongosh --eval 'db.runCommand("ping").ok' localhost:27017 --quiet
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - mongodata:/data/db
+
+  # Currents services depend on mongodb
+  director:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  api:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  changestreams-worker:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  write-worker:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  scheduler:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  webhooks:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+volumes:
+  mongodata: null

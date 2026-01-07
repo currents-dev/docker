@@ -1,0 +1,58 @@
+# Redis service configuration
+# Almost always included - provides caching and pub/sub messaging
+
+services:
+  redis:
+    hostname: redis
+    image: redis/redis-stack
+    expose:
+      - 6379
+      - 8001
+    ports:
+      - 6379:6379
+      - 8001:8001
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - redisdata:/data
+
+  # Currents services depend on redis
+  director:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+  api:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+  changestreams-worker:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+  write-worker:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+  scheduler:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+  webhooks:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+
+volumes:
+  redisdata: null
