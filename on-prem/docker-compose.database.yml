@@ -2,272 +2,239 @@
 # Profile: database - Database services (redis, mongodb, clickhouse)
 
 name: currents_database
-networks:
-  default:
-    name: currents_database_default
+
+# This core Currents application services
+
+# Redis service configuration
+# Almost always included - provides caching and pub/sub messaging
 services:
-  api:
-    container_name: currentsapi
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - INCLUDE_DASHBOARD=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CURRENTS_RECORD_API_URL=http://localhost:1234
-    expose:
-      - 4000
-    hostname: api
-    image: ${IMAGE_REPOSITORY:-currents-}api:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "4000"
-        target: 4000
-    restart: unless-stopped
-  changestreams-worker:
-    container_name: currrents-changestreams-worker
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-    image: ${IMAGE_REPOSITORY:-currents-}change-streams:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    restart: unless-stopped
-  clickhouse:
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      CLICKHOUSE_SKIP_USER_SETUP: "1"
-    healthcheck:
-      interval: 2s
-      retries: 10
-      test:
-        - CMD-SHELL
-        - wget --spider -q clickhouse:8123/ping
-      timeout: 5s
-    hostname: clickhouse
-    image: clickhouse/clickhouse-server:25.8
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "8123"
-        target: 8123
-      - mode: ingress
-        protocol: tcp
-        published: "9123"
-        target: 9000
-    restart: unless-stopped
-    volumes:
-      - source: clickhousedata
-        target: /var/lib/clickhouse
-        type: volume
-        volume: {}
+  # Currents services depend on redis
   director:
-    container_name: currentsdirector
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - API_URL="http://localhost:4000/v1"
-      - APP_BASE_URL=http://localhost:4000
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-    expose:
-      - 1234
     hostname: director
     image: ${IMAGE_REPOSITORY:-currents-}director:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "1234"
-        target: 1234
-    restart: unless-stopped
-  mongodb:
-    entrypoint:
-      - /usr/bin/mongod
-      - --bind_ip_all
-      - --replSet
-      - rs0
     expose:
-      - 27017
+      - 1234
+    ports:
+      - 1234:1234
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - default
+    environment:
+      - CURRENTS_ENV=onprem
+      - API_URL="http://localhost:4000/v1"
+      - APP_BASE_URL=http://localhost:4000
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  api:
+    hostname: api
+    image: ${IMAGE_REPOSITORY:-currents-}api:${IMAGE_TAG:-dev}
+    expose:
+      - 4000
+    ports:
+      - 4000:4000
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - INCLUDE_DASHBOARD=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
+      - CURRENTS_RECORD_API_URL=http://localhost:1234
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  changestreams-worker:
+    image: ${IMAGE_REPOSITORY:-currents-}change-streams:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  write-worker:
+    image: ${IMAGE_REPOSITORY:-currents-}writer:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  scheduler:
+    image: ${IMAGE_REPOSITORY:-currents-}scheduler:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      - RUN_STARTUP_TASKS=true
+    volumes:
+      - ${SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  webhooks:
+    image: ${IMAGE_REPOSITORY:-currents-}webhooks:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - DASHBOARD_URL=http://localhost:4000
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+  clickhouse:
+    hostname: clickhouse
+    image: clickhouse/clickhouse-server:25.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
     healthcheck:
-      interval: 2s
-      retries: 10
       test:
-        - CMD-SHELL
-        - (echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh localhost:27017 --quiet) && mongosh --eval 'db.runCommand("ping").ok' localhost:27017 --quiet
+        - 'CMD-SHELL'
+        - 'wget --spider -q clickhouse:8123/ping'
+      interval: 2s
       timeout: 5s
+      retries: 10
+    env_file:
+      - .env
+    ports:
+      - 8123:8123 # HTTP Interface
+      - 9123:9000 # TCP Interface
+    networks:
+      - default
+    configs:
+      - source: clickhouse_users
+        target: /etc/clickhouse-server/users.d/users.xml
+    volumes:
+      - ${CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
+  mongodb:
     hostname: mongodb
     image: mongo:7.0.0
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "27017"
-        target: 27017
-    restart: unless-stopped
-    volumes:
-      - source: mongodata
-        target: /data/db
-        type: volume
-        volume: {}
-  redis:
     expose:
-      - 6379
-      - 8001
-    hostname: redis
-    image: redis/redis-stack
-    networks:
-      default: null
+      - 27017
     ports:
-      - mode: ingress
-        protocol: tcp
-        published: "6379"
-        target: 6379
-      - mode: ingress
-        protocol: tcp
-        published: "8001"
-        target: 8001
+      - 27017:27017
     restart: unless-stopped
+    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
+    networks:
+      - default
+    healthcheck:
+      test:
+        - 'CMD-SHELL'
+        - (echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh localhost:27017 --quiet) && mongosh --eval 'db.runCommand("ping").ok' localhost:27017 --quiet
+      interval: 2s
+      timeout: 5s
+      retries: 10
     volumes:
-      - source: redisdata
-        target: /data
-        type: volume
-        volume: {}
-  scheduler:
-    container_name: currents-scheduler
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-      - RUN_STARTUP_TASKS=true
-    image: ${IMAGE_REPOSITORY:-currents-}scheduler:${IMAGE_TAG:-dev}
-    networks:
-      default: null
+      - ${MONGODB_VOLUME:-./data/mongodb}:/data/db
+  redis:
+    hostname: redis
+    image: redis/redis-stack-server:7.4.0-v8
+    ports:
+      - 6379:6379
     restart: unless-stopped
+    networks:
+      - default
     volumes:
-      - bind:
-          create_host_path: true
-        read_only: true
-        source: ./.startup
-        target: /app/packages/scheduler/dist/.startup
-        type: bind
-  webhooks:
-    container_name: currents-webhooks
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - DASHBOARD_URL=http://localhost:4000
-    image: ${IMAGE_REPOSITORY:-currents-}webhooks:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    restart: unless-stopped
-  write-worker:
-    container_name: currents-write-worker
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-      mongodb:
-        condition: service_healthy
-        required: false
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-    image: ${IMAGE_REPOSITORY:-currents-}writer:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    restart: unless-stopped
-volumes:
-  clickhousedata:
-    name: currents_database_clickhousedata
-  mongodata:
-    name: currents_database_mongodata
-  redisdata:
-    name: currents_database_redisdata
+      - ${REDIS_VOLUME:-./data/redis}:/data
+networks:
+  default: null
+configs:
+  clickhouse_users:
+    content: |
+      <?xml version="1.0"?>
+      <clickhouse>
+          <users>
+              <!-- Default user with password from environment (local access only) -->
+              <default>
+                  <password>${CLICKHOUSE_DEFAULT_PASSWORD}</password>
+                  <networks>
+                      <ip>::1</ip>
+                      <ip>127.0.0.1</ip>
+                  </networks>
+                  <profile>default</profile>
+                  <quota>default</quota>
+                  <access_management>1</access_management>
+              </default>
+              <!-- Currents application user -->
+              <currents>
+                  <password>${CLICKHOUSE_CURRENTS_PASSWORD}</password>
+                  <networks>
+                      <ip>::/0</ip>
+                  </networks>
+                  <profile>default</profile>
+                  <quota>default</quota>
+              </currents>
+          </users>
+      </clickhouse>

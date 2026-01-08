@@ -4,18 +4,14 @@
 services:
   redis:
     hostname: redis
-    image: redis/redis-stack
-    expose:
-      - 6379
-      - 8001
+    image: redis/redis-stack-server:7.4.0-v8
     ports:
       - 6379:6379
-      - 8001:8001
     restart: unless-stopped
     networks:
       - default
     volumes:
-      - redisdata:/data
+      - ${REDIS_VOLUME:-./data/redis}:/data
 
   # Currents services depend on redis
   director:
@@ -53,6 +49,3 @@ services:
       redis:
         condition: service_started
         required: false
-
-volumes:
-  redisdata: null

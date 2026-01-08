@@ -1,13 +1,42 @@
 # ClickHouse service configuration
 # Analytics database for test results and metrics
 
+configs:
+  clickhouse_users:
+    content: |
+      <?xml version="1.0"?>
+      <clickhouse>
+          <users>
+              <!-- Default user with password from environment (local access only) -->
+              <default>
+                  <password>${CLICKHOUSE_DEFAULT_PASSWORD}</password>
+                  <networks>
+                      <ip>::1</ip>
+                      <ip>127.0.0.1</ip>
+                  </networks>
+                  <profile>default</profile>
+                  <quota>default</quota>
+                  <access_management>1</access_management>
+              </default>
+              <!-- Currents application user -->
+              <currents>
+                  <password>${CLICKHOUSE_CURRENTS_PASSWORD}</password>
+                  <networks>
+                      <ip>::/0</ip>
+                  </networks>
+                  <profile>default</profile>
+                  <quota>default</quota>
+              </currents>
+          </users>
+      </clickhouse>
+
 services:
   clickhouse:
     hostname: clickhouse
     image: clickhouse/clickhouse-server:25.8
     restart: unless-stopped
     environment:
-      CLICKHOUSE_SKIP_USER_SETUP: '1'
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
     healthcheck:
       test:
         - 'CMD-SHELL'
@@ -22,8 +51,11 @@ services:
       - 9123:9000 # TCP Interface
     networks:
       - default
+    configs:
+      - source: clickhouse_users
+        target: /etc/clickhouse-server/users.d/users.xml
     volumes:
-      - clickhousedata:/var/lib/clickhouse
+      - ${CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
 
   # Currents services depend on clickhouse
   director:
@@ -61,6 +93,3 @@ services:
       clickhouse:
         condition: service_healthy
         required: false
-
-volumes:
-  clickhousedata: null

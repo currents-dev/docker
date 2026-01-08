@@ -5,6 +5,7 @@ on:
     paths:
       - 'on-prem/templates/**'
       - 'on-prem/scripts/generate-compose.sh'
+      - 'on-prem/scripts/sync-templates.sh'
       - 'on-prem/docker-compose.full.yml'
       - 'on-prem/docker-compose.database.yml'
       - 'on-prem/docker-compose.cache.yml'
@@ -12,6 +13,7 @@ on:
     paths:
       - 'on-prem/templates/**'
       - 'on-prem/scripts/generate-compose.sh'
+      - 'on-prem/scripts/sync-templates.sh'
       - 'on-prem/docker-compose.full.yml'
       - 'on-prem/docker-compose.database.yml'
       - 'on-prem/docker-compose.cache.yml'
@@ -23,12 +25,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install yq
+        uses: mikefarah/yq@v4
+
       - name: Generate compose files
         working-directory: on-prem
-        run: |
-          ./scripts/generate-compose.sh full
-          ./scripts/generate-compose.sh database
-          ./scripts/generate-compose.sh cache
+        run: ./scripts/sync-templates.sh
 
       - name: Check for differences
         working-directory: on-prem
@@ -37,12 +39,8 @@ jobs:
             echo ""
             echo "❌ Generated compose files are out of sync with committed files!"
             echo ""
-            echo "To fix this, run the following commands and commit the changes:"
-            echo "  cd on-prem"
-            echo "  ./scripts/generate-compose.sh full"
-            echo "  ./scripts/generate-compose.sh database"
-            echo "  ./scripts/generate-compose.sh cache"
+            echo "To fix this, run and commit the changes:"
+            echo "  cd on-prem && ./scripts/sync-templates.sh"
             exit 1
           fi
           echo "✅ All compose files are in sync"
-

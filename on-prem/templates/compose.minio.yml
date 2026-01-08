@@ -5,7 +5,7 @@ services:
   minio:
     image: bitnamilegacy/minio:2025.2.28
     volumes:
-      - miniodata:/bitnami/minio/data
+      - ${MINIO_VOLUME:-./data/minio}:/bitnami/minio/data
     ports:
       - 9000:9000
       - 9001:9001
@@ -15,7 +15,3 @@ services:
       MINIO_DEFAULT_BUCKETS: currents
       MINIO_ROOT_USER: ${MINIO_SERVER_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SERVER_SECRET_KEY}
-
-volumes:
-  miniodata: null
-

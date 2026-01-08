@@ -2,170 +2,130 @@
 # Profile: cache - Cache (redis)
 
 name: currents_cache
-networks:
-  default:
-    name: currents_cache_default
+
+# This core Currents application services
+
+# Redis service configuration
+# Almost always included - provides caching and pub/sub messaging
 services:
-  api:
-    container_name: currentsapi
-    depends_on:
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - INCLUDE_DASHBOARD=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CURRENTS_RECORD_API_URL=http://localhost:1234
-    expose:
-      - 4000
-    hostname: api
-    image: ${IMAGE_REPOSITORY:-currents-}api:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "4000"
-        target: 4000
-    restart: unless-stopped
-  changestreams-worker:
-    container_name: currrents-changestreams-worker
-    depends_on:
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-    image: ${IMAGE_REPOSITORY:-currents-}change-streams:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    restart: unless-stopped
+  # Currents services depend on redis
   director:
-    container_name: currentsdirector
-    depends_on:
-      redis:
-        condition: service_started
-        required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - API_URL="http://localhost:4000/v1"
-      - APP_BASE_URL=http://localhost:4000
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-    expose:
-      - 1234
     hostname: director
     image: ${IMAGE_REPOSITORY:-currents-}director:${IMAGE_TAG:-dev}
-    networks:
-      default: null
-    ports:
-      - mode: ingress
-        protocol: tcp
-        published: "1234"
-        target: 1234
-    restart: unless-stopped
-  redis:
     expose:
-      - 6379
-      - 8001
-    hostname: redis
-    image: redis/redis-stack
-    networks:
-      default: null
+      - 1234
     ports:
-      - mode: ingress
-        protocol: tcp
-        published: "6379"
-        target: 6379
-      - mode: ingress
-        protocol: tcp
-        published: "8001"
-        target: 8001
+      - 1234:1234
     restart: unless-stopped
-    volumes:
-      - source: redisdata
-        target: /data
-        type: volume
-        volume: {}
-  scheduler:
-    container_name: currents-scheduler
-    depends_on:
-      redis:
-        condition: service_started
-        required: false
     env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-      - RUN_STARTUP_TASKS=true
-    image: ${IMAGE_REPOSITORY:-currents-}scheduler:${IMAGE_TAG:-dev}
+      - .env
     networks:
-      default: null
-    restart: unless-stopped
-    volumes:
-      - bind:
-          create_host_path: true
-        read_only: true
-        source: ./.startup
-        target: /app/packages/scheduler/dist/.startup
-        type: bind
-  webhooks:
-    container_name: currents-webhooks
+      - default
+    environment:
+      - CURRENTS_ENV=onprem
+      - API_URL="http://localhost:4000/v1"
+      - APP_BASE_URL=http://localhost:4000
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
     depends_on:
       redis:
         condition: service_started
         required: false
-    env_file:
-      - path: .env
-        required: true
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
-      - DASHBOARD_URL=http://localhost:4000
-    image: ${IMAGE_REPOSITORY:-currents-}webhooks:${IMAGE_TAG:-dev}
+  api:
+    hostname: api
+    image: ${IMAGE_REPOSITORY:-currents-}api:${IMAGE_TAG:-dev}
+    expose:
+      - 4000
+    ports:
+      - 4000:4000
+    restart: unless-stopped
     networks:
-      default: null
-    restart: unless-stopped
-  write-worker:
-    container_name: currents-write-worker
-    depends_on:
-      redis:
-        condition: service_started
-        required: false
+      - default
     env_file:
-      - path: .env
-        required: true
+      - .env
     environment:
+      - CURRENTS_ENV=onprem
+      - INCLUDE_DASHBOARD=onprem
       - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
-      - REDIS_URI=redis://host.docker.internal:6379
-      - REDIS_URI_SLAVE=redis://host.docker.internal:6379
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
       - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CLICKHOUSE_URL=http://host.docker.internal:8123
-    image: ${IMAGE_REPOSITORY:-currents-}writer:${IMAGE_TAG:-dev}
-    networks:
-      default: null
+      - CURRENTS_RECORD_API_URL=http://localhost:1234
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+  changestreams-worker:
+    image: ${IMAGE_REPOSITORY:-currents-}change-streams:${IMAGE_TAG:-dev}
     restart: unless-stopped
-volumes:
-  redisdata:
-    name: currents_cache_redisdata
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+  write-worker:
+    image: ${IMAGE_REPOSITORY:-currents-}writer:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+  scheduler:
+    image: ${IMAGE_REPOSITORY:-currents-}scheduler:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      - RUN_STARTUP_TASKS=true
+    volumes:
+      - ${SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+  webhooks:
+    image: ${IMAGE_REPOSITORY:-currents-}webhooks:${IMAGE_TAG:-dev}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      - CURRENTS_ENV=onprem
+      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
+      - DASHBOARD_URL=http://localhost:4000
+    depends_on:
+      redis:
+        condition: service_started
+        required: false
+  redis:
+    hostname: redis
+    image: redis/redis-stack-server:7.4.0-v8
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - ${REDIS_VOLUME:-./data/redis}:/data
+networks:
+  default: null

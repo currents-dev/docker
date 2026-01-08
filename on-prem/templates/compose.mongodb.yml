@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - mongodata:/data/db
+      - ${MONGODB_VOLUME:-./data/mongodb}:/data/db
 
   # Currents services depend on mongodb
   director:
@@ -59,6 +59,3 @@ services:
       mongodb:
         condition: service_healthy
         required: false
-
-volumes:
-  mongodata: null
