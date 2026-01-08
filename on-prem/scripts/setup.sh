@@ -59,6 +59,18 @@ setup_env_file() {
         sed -i.bak "s|^MINIO_SERVER_SECRET_KEY=.*|MINIO_SERVER_SECRET_KEY=$MINIO_SECRET|" "$ENV_FILE"
     fi
     
+    # Generate CLICKHOUSE_DEFAULT_PASSWORD
+    CLICKHOUSE_DEFAULT=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
+    if grep -q "^CLICKHOUSE_DEFAULT_PASSWORD=" "$ENV_FILE"; then
+        sed -i.bak "s|^CLICKHOUSE_DEFAULT_PASSWORD=.*|CLICKHOUSE_DEFAULT_PASSWORD=$CLICKHOUSE_DEFAULT|" "$ENV_FILE"
+    fi
+    
+    # Generate CLICKHOUSE_CURRENTS_PASSWORD
+    CLICKHOUSE_CURRENTS=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
+    if grep -q "^CLICKHOUSE_CURRENTS_PASSWORD=" "$ENV_FILE"; then
+        sed -i.bak "s|^CLICKHOUSE_CURRENTS_PASSWORD=.*|CLICKHOUSE_CURRENTS_PASSWORD=$CLICKHOUSE_CURRENTS|" "$ENV_FILE"
+    fi
+    
     # Generate GITLAB_STATE_SECRET (RSA private key, base64 encoded)
     GITLAB_KEY_FILE="$ON_PREM_DIR/.gitlab-key.pem"
     if [ ! -f "$GITLAB_KEY_FILE" ]; then

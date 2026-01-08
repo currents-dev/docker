@@ -1,3 +1,4 @@
 .startup
 /.env
 /.gitlab-key.pem
+/data/
