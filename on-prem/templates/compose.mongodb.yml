@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - ${MONGODB_VOLUME:-./data/mongodb}:/data/db
+      - ${DC_MONGODB_VOLUME:-./data/mongodb}:/data/db
 
   # Currents services depend on mongodb
   director:

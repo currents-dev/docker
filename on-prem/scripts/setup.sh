@@ -53,10 +53,10 @@ setup_env_file() {
         sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" "$ENV_FILE"
     fi
     
-    # Generate MINIO_SERVER_SECRET_KEY
-    MINIO_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
-    if grep -q "^MINIO_SERVER_SECRET_KEY=" "$ENV_FILE"; then
-        sed -i.bak "s|^MINIO_SERVER_SECRET_KEY=.*|MINIO_SERVER_SECRET_KEY=$MINIO_SECRET|" "$ENV_FILE"
+    # Generate RUSTFS_SECRET_KEY
+    RUSTFS_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
+    if grep -q "^RUSTFS_SECRET_KEY=" "$ENV_FILE"; then
+        sed -i.bak "s|^RUSTFS_SECRET_KEY=.*|RUSTFS_SECRET_KEY=$RUSTFS_SECRET|" "$ENV_FILE"
     fi
     
     # Generate CLICKHOUSE_DEFAULT_PASSWORD
@@ -92,7 +92,7 @@ setup_env_file() {
 # =============================================================================
 echo -e "${YELLOW}Select a configuration profile:${NC}"
 echo ""
-echo "  1) full      - All services (redis, mongodb, clickhouse, minio)"
+echo "  1) full      - All services (redis, mongodb, clickhouse, rustfs)"
 echo "                 Use when running everything locally"
 echo ""
 echo "  2) database  - Database services (redis, mongodb, clickhouse)"
@@ -142,10 +142,10 @@ case $choice in
             SERVICES="$SERVICES clickhouse"
         fi
         
-        read -p "Include MinIO (S3-compatible storage)? [y/N]: " include_minio
-        include_minio=${include_minio:-N}
-        if [[ $include_minio =~ ^[Yy] ]]; then
-            SERVICES="$SERVICES minio"
+        read -p "Include RustFS (S3-compatible storage)? [y/N]: " include_rustfs
+        include_rustfs=${include_rustfs:-N}
+        if [[ $include_rustfs =~ ^[Yy] ]]; then
+            SERVICES="$SERVICES rustfs"
         fi
         
         if [ -z "$SERVICES" ]; then

@@ -11,7 +11,7 @@ services:
   # Currents services depend on redis
   director:
     hostname: director
-    image: ${IMAGE_REPOSITORY:-currents-}director:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}director:${DC_IMAGE_TAG:-dev}
     expose:
       - 1234
     ports:
@@ -32,7 +32,7 @@ services:
         required: false
   api:
     hostname: api
-    image: ${IMAGE_REPOSITORY:-currents-}api:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}api:${DC_IMAGE_TAG:-dev}
     expose:
       - 4000
     ports:
@@ -54,7 +54,7 @@ services:
         condition: service_started
         required: false
   changestreams-worker:
-    image: ${IMAGE_REPOSITORY:-currents-}change-streams:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}change-streams:${DC_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -69,7 +69,7 @@ services:
         condition: service_started
         required: false
   write-worker:
-    image: ${IMAGE_REPOSITORY:-currents-}writer:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}writer:${DC_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -85,7 +85,7 @@ services:
         condition: service_started
         required: false
   scheduler:
-    image: ${IMAGE_REPOSITORY:-currents-}scheduler:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}scheduler:${DC_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -97,13 +97,13 @@ services:
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
       - RUN_STARTUP_TASKS=true
     volumes:
-      - ${SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
+      - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
       redis:
         condition: service_started
         required: false
   webhooks:
-    image: ${IMAGE_REPOSITORY:-currents-}webhooks:${IMAGE_TAG:-dev}
+    image: ${DC_IMAGE_REPOSITORY:-currents-}webhooks:${DC_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -126,6 +126,6 @@ services:
     networks:
       - default
     volumes:
-      - ${REDIS_VOLUME:-./data/redis}:/data
+      - ${DC_REDIS_VOLUME:-./data/redis}:/data
 networks:
   default: null
