@@ -9,7 +9,7 @@
 #   ./generate-compose.sh full              # All services
 #   ./generate-compose.sh database          # redis, mongodb, clickhouse
 #   ./generate-compose.sh cache             # redis only
-#   ./generate-compose.sh database storage  # All data services including minio
+#   ./generate-compose.sh database storage  # All data services including rustfs
 #
 # Requirements:
 #   - yq (https://github.com/mikefarah/yq)
@@ -30,15 +30,15 @@ fi
 # Profile descriptions
 get_profile_desc() {
     case "$1" in
-        full)       echo "All services (redis, mongodb, clickhouse, minio)" ;;
+        full)       echo "All services (redis, mongodb, clickhouse, rustfs)" ;;
         database)   echo "Database services (redis, mongodb, clickhouse)" ;;
         cache)      echo "Cache (redis)" ;;
         analytics)  echo "Analytics (clickhouse)" ;;
-        storage)    echo "Object storage (minio)" ;;
+        storage)    echo "Object storage (rustfs)" ;;
         redis)      echo "Redis" ;;
         mongodb)    echo "MongoDB" ;;
         clickhouse) echo "ClickHouse" ;;
-        minio)      echo "MinIO" ;;
+        rustfs)     echo "RustFS" ;;
         *)          echo "$1" ;;
     esac
 }
@@ -46,15 +46,15 @@ get_profile_desc() {
 # Profile to services mapping
 get_profile_services() {
     case "$1" in
-        full)       echo "redis mongodb clickhouse minio" ;;
+        full)       echo "redis mongodb clickhouse rustfs" ;;
         database)   echo "redis mongodb clickhouse" ;;
         cache)      echo "redis" ;;
         analytics)  echo "clickhouse" ;;
-        storage)    echo "minio" ;;
+        storage)    echo "rustfs" ;;
         redis)      echo "redis" ;;
         mongodb)    echo "mongodb" ;;
         clickhouse) echo "clickhouse" ;;
-        minio)      echo "minio" ;;
+        rustfs)     echo "rustfs" ;;
         *)          echo "" ;;
     esac
 }
@@ -64,7 +64,7 @@ show_usage() {
     echo "Usage: $0 <profile> [profile...]"
     echo ""
     echo "Available profiles (all include the currents services):"
-    for profile in full database cache analytics storage redis mongodb clickhouse minio; do
+    for profile in full database cache analytics storage redis mongodb clickhouse rustfs; do
         printf "  %-12s - %s\n" "$profile" "$(get_profile_desc $profile)"
     done
 }

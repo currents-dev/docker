@@ -24,7 +24,7 @@ docker compose up -d
 
 | Profile | Services Included | Use Case |
 |---------|-------------------|----------|
-| `full` | Redis, MongoDB, ClickHouse, MinIO | Running everything locally |
+| `full` | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
 | `database` | Redis, MongoDB, ClickHouse | External S3-compatible storage |
 | `cache` | Redis | External MongoDB, ClickHouse, and S3 |
 
@@ -55,7 +55,7 @@ Generates a docker-compose file for a specific profile. Used by `setup.sh` but c
 ./scripts/generate-compose.sh redis
 ./scripts/generate-compose.sh mongodb
 ./scripts/generate-compose.sh clickhouse
-./scripts/generate-compose.sh minio
+./scripts/generate-compose.sh rustfs
 
 # Combine multiple profiles/services
 ./scripts/generate-compose.sh database storage
@@ -65,15 +65,15 @@ Generates a docker-compose file for a specific profile. Used by `setup.sh` but c
 
 | Profile | Description |
 |---------|-------------|
-| `full` | All services (redis, mongodb, clickhouse, minio) |
+| `full` | All services (redis, mongodb, clickhouse, rustfs) |
 | `database` | Database services (redis, mongodb, clickhouse) |
 | `cache` | Cache (redis) |
 | `analytics` | Analytics (clickhouse) |
-| `storage` | Object storage (minio) |
+| `storage` | Object storage (rustfs) |
 | `redis` | Redis only |
 | `mongodb` | MongoDB only |
 | `clickhouse` | ClickHouse only |
-| `minio` | MinIO only |
+| `rustfs` | RustFS only |
 
 ### `scripts/generate-secrets.sh`
 
@@ -106,10 +106,23 @@ Utility for generating secrets and keys.
 
 Copy `.env.example` to `.env` and configure as needed. The `setup.sh` script does this automatically and generates required secrets.
 
-Key variables:
+### Application Variables
+
 - `JWT_SECRET` - Authentication token secret
-- `MINIO_SERVER_ACCESS_KEY` / `MINIO_SERVER_SECRET_KEY` - MinIO credentials
+- `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` - RustFS credentials
 - `GITLAB_STATE_SECRET` - GitLab integration key (base64-encoded PEM)
+
+### Compose-Only Variables
+
+Variables prefixed with `DC_` are used only by docker-compose (not passed to containers):
+
+- `DC_IMAGE_REPOSITORY` - Docker image repository prefix
+- `DC_IMAGE_TAG` - Docker image tag
+- `DC_REDIS_VOLUME` - Redis data volume path
+- `DC_MONGODB_VOLUME` - MongoDB data volume path
+- `DC_CLICKHOUSE_VOLUME` - ClickHouse data volume path
+- `DC_RUSTFS_VOLUME` - RustFS data volume path
+- `DC_SCHEDULER_STARTUP_VOLUME` - Scheduler startup data volume path
 
 ## Services
 
@@ -125,7 +138,7 @@ Key variables:
 - **redis** (port 6379, 8001) - Cache and pub/sub
 - **mongodb** (port 27017) - Primary database
 - **clickhouse** (port 8123, 9123) - Analytics database
-- **minio** (port 9000, 9001) - S3-compatible object storage
+- **rustfs** (port 9000, 9001) - S3-compatible object storage
 
 ## Development
 

@@ -55,7 +55,7 @@ services:
       - source: clickhouse_users
         target: /etc/clickhouse-server/users.d/users.xml
     volumes:
-      - ${CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
+      - ${DC_CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
 
   # Currents services depend on clickhouse
   director:

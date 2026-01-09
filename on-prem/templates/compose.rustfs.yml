@@ -1,0 +1,39 @@
+# RustFS service configuration
+# S3-compatible object storage - usually excluded when using external S3/cloud storage
+
+services:
+  rustfs:
+    hostname: rustfs
+    image: rustfs/rustfs:1.0.0-alpha.79
+    ports:
+      - 9000:9000  # S3 API port
+      - 9001:9001  # Web console port
+    environment:
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+    env_file:
+      - .env
+    networks:
+      - default
+    volumes:
+      - ${DC_RUSTFS_VOLUME:-./data/rustfs}:/data  # /data is RustFS's default storage location
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9000/health || exit 1']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  rustfs-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${RUSTFS_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${RUSTFS_SECRET_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: >
+      sh -c "aws --endpoint-url=http://rustfs:9000 s3 mb s3://currents || true"
+    networks:
+      - default
