@@ -3,11 +3,9 @@
 services:
   director:
     hostname: director
-    image: ${DC_IMAGE_REPOSITORY:-currents-}director:${DC_IMAGE_TAG:-dev}
-    expose:
-      - 1234
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-dev}
     ports:
-      - 1234:1234
+      - ${DC_DIRECTOR_PORT:-1234}:1234
     restart: unless-stopped
     env_file:
       - .env
@@ -15,16 +13,12 @@ services:
       - default
     environment:
       - CURRENTS_ENV=onprem
-      - API_URL="http://localhost:4000/v1"
-      - APP_BASE_URL=http://localhost:4000
 
   api:
     hostname: api
-    image: ${DC_IMAGE_REPOSITORY:-currents-}api:${DC_IMAGE_TAG:-dev}
-    expose:
-      - 4000
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-dev}
     ports:
-      - 4000:4000
+      - ${DC_API_PORT:-4000}:4000
     restart: unless-stopped
     networks:
       - default
@@ -34,11 +28,9 @@ services:
       - CURRENTS_ENV=onprem
       - INCLUDE_DASHBOARD=onprem
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CURRENTS_RECORD_API_URL=http://localhost:1234
 
   changestreams-worker:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}change-streams:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -49,7 +41,7 @@ services:
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
 
   write-worker:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}writer:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -57,11 +49,10 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
 
   scheduler:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}scheduler:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -75,7 +66,7 @@ services:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
 
   webhooks:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}webhooks:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -83,7 +74,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - DASHBOARD_URL=http://localhost:4000
 
 networks:
   default: null

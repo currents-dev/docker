@@ -4,11 +4,9 @@
 services:
   mongodb:
     hostname: mongodb
-    image: mongo:8.2.3
-    expose:
-      - 27017
+    image: ${DC_MONGODB_IMAGE:-mongo:8.2.3}
     ports:
-      - 27017:27017
+      - ${DC_MONGODB_PORT:-127.0.0.1:27017}:27017
     restart: unless-stopped
     entrypoint:
       - bash
