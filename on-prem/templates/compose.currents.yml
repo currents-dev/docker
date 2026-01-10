@@ -17,7 +17,6 @@ services:
       - CURRENTS_ENV=onprem
       - API_URL="http://localhost:4000/v1"
       - APP_BASE_URL=http://localhost:4000
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
 
   api:
     hostname: api
@@ -34,7 +33,6 @@ services:
     environment:
       - CURRENTS_ENV=onprem
       - INCLUDE_DASHBOARD=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
       - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
       - CURRENTS_RECORD_API_URL=http://localhost:1234
@@ -48,7 +46,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
 
   write-worker:
@@ -60,7 +57,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
       - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
 
@@ -73,7 +69,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
       - RUN_STARTUP_TASKS=true
     volumes:
@@ -88,7 +83,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - MONGODB_URI=mongodb://host.docker.internal:27017/?readPreference=primary&directConnection=true&ssl=false
       - DASHBOARD_URL=http://localhost:4000
 
 networks:

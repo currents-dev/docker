@@ -4,22 +4,60 @@
 services:
   mongodb:
     hostname: mongodb
-    image: mongo:7.0.0
+    image: mongo:8.2.3
     expose:
       - 27017
     ports:
       - 27017:27017
     restart: unless-stopped
-    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
+    entrypoint:
+      - bash
+      - -c
+      - |
+        # Generate keyFile if it doesn't exist
+        KEYFILE=/data/db/replica.key
+        if [ ! -f "$$KEYFILE" ]; then
+          echo "Generating MongoDB replica set keyFile..."
+          openssl rand -base64 756 > "$$KEYFILE"
+        fi
+        chmod 400 "$$KEYFILE"
+        chown mongodb:mongodb "$$KEYFILE"
+        
+        # Call original Docker entrypoint (handles MONGO_INITDB_* user creation)
+        exec docker-entrypoint.sh mongod --bind_ip_all --replSet rs0 --auth --keyFile "$$KEYFILE"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
     networks:
       - default
+    post_start:
+      - command:
+          - bash
+          - -c
+          - |
+            echo 'Waiting for MongoDB to be ready...'
+            until mongosh -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --quiet --eval "db.adminCommand('ping')" 2>/dev/null; do sleep 1; done
+            
+            echo 'Initializing replica set...'
+            mongosh -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --quiet --eval "
+              try {
+                rs.status();
+                print('Replica set already initialized');
+              } catch (err) {
+                rs.initiate({_id:'rs0', members:[{_id:0, host:'mongodb:27017'}]});
+                print('Replica set initialized');
+              }
+            "
+            
+            echo 'MongoDB initialization complete'
     healthcheck:
       test:
         - 'CMD-SHELL'
-        - (echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh localhost:27017 --quiet) && mongosh --eval 'db.runCommand("ping").ok' localhost:27017 --quiet
-      interval: 2s
+        - mongosh --quiet --eval "db.runCommand('ping').ok" localhost:27017
+      interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
     volumes:
       - ${DC_MONGODB_VOLUME:-./data/mongodb}:/data/db
 
