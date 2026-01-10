@@ -4,9 +4,9 @@
 services:
   redis:
     hostname: redis
-    image: redis/redis-stack-server:7.4.0-v8
+    image: ${DC_REDIS_IMAGE:-redis/redis-stack-server:7.4.0-v8}
     ports:
-      - 6379:6379
+      - ${DC_REDIS_PORT:-127.0.0.1:6379}:6379
     restart: unless-stopped
     networks:
       - default

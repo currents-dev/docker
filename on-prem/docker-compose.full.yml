@@ -11,11 +11,9 @@ services:
   # Currents services depend on redis
   director:
     hostname: director
-    image: ${DC_IMAGE_REPOSITORY:-currents-}director:${DC_IMAGE_TAG:-dev}
-    expose:
-      - 1234
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-dev}
     ports:
-      - 1234:1234
+      - ${DC_DIRECTOR_PORT:-1234}:1234
     restart: unless-stopped
     env_file:
       - .env
@@ -23,8 +21,6 @@ services:
       - default
     environment:
       - CURRENTS_ENV=onprem
-      - API_URL="http://localhost:4000/v1"
-      - APP_BASE_URL=http://localhost:4000
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -37,11 +33,9 @@ services:
         required: false
   api:
     hostname: api
-    image: ${DC_IMAGE_REPOSITORY:-currents-}api:${DC_IMAGE_TAG:-dev}
-    expose:
-      - 4000
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-dev}
     ports:
-      - 4000:4000
+      - ${DC_API_PORT:-4000}:4000
     restart: unless-stopped
     networks:
       - default
@@ -51,8 +45,6 @@ services:
       - CURRENTS_ENV=onprem
       - INCLUDE_DASHBOARD=onprem
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
-      - CURRENTS_RECORD_API_URL=http://localhost:1234
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -64,7 +56,7 @@ services:
         condition: service_started
         required: false
   changestreams-worker:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}change-streams:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -84,7 +76,7 @@ services:
         condition: service_started
         required: false
   write-worker:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}writer:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -92,7 +84,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - AUTOMATED_REPORTS_CURRENTS_DASHBOARD_HOSTNAME=http://host.docker.internal:4000
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
     depends_on:
       clickhouse:
@@ -105,7 +96,7 @@ services:
         condition: service_started
         required: false
   scheduler:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}scheduler:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -128,7 +119,7 @@ services:
         condition: service_started
         required: false
   webhooks:
-    image: ${DC_IMAGE_REPOSITORY:-currents-}webhooks:${DC_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-dev}
     restart: unless-stopped
     networks:
       - default
@@ -136,7 +127,6 @@ services:
       - .env
     environment:
       - CURRENTS_ENV=onprem
-      - DASHBOARD_URL=http://localhost:4000
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -149,7 +139,7 @@ services:
         required: false
   clickhouse:
     hostname: clickhouse
-    image: clickhouse/clickhouse-server:25.8
+    image: ${DC_CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:25.8}
     restart: unless-stopped
     environment:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
@@ -163,8 +153,8 @@ services:
     env_file:
       - .env
     ports:
-      - 8123:8123 # HTTP Interface
-      - 9123:9000 # TCP Interface
+      - ${DC_CLICKHOUSE_HTTP_PORT:-127.0.0.1:8123}:8123 # HTTP Interface
+      - ${DC_CLICKHOUSE_TCP_PORT:-127.0.0.1:9123}:9000 # TCP Interface
     networks:
       - default
     configs:
@@ -174,11 +164,9 @@ services:
       - ${DC_CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
   mongodb:
     hostname: mongodb
-    image: mongo:8.2.3
-    expose:
-      - 27017
+    image: ${DC_MONGODB_IMAGE:-mongo:8.2.3}
     ports:
-      - 27017:27017
+      - ${DC_MONGODB_PORT:-127.0.0.1:27017}:27017
     restart: unless-stopped
     entrypoint:
       - bash
@@ -232,9 +220,9 @@ services:
       - ${DC_MONGODB_VOLUME:-./data/mongodb}:/data/db
   redis:
     hostname: redis
-    image: redis/redis-stack-server:7.4.0-v8
+    image: ${DC_REDIS_IMAGE:-redis/redis-stack-server:7.4.0-v8}
     ports:
-      - 6379:6379
+      - ${DC_REDIS_PORT:-127.0.0.1:6379}:6379
     restart: unless-stopped
     networks:
       - default
@@ -242,10 +230,10 @@ services:
       - ${DC_REDIS_VOLUME:-./data/redis}:/data
   rustfs:
     hostname: rustfs
-    image: rustfs/rustfs:1.0.0-alpha.79
+    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.0-alpha.79}
     ports:
-      - 9000:9000 # S3 API port
-      - 9001:9001 # Web console port
+      - ${DC_RUSTFS_S3_PORT:-9000}:9000 # S3 API port
+      - ${DC_RUSTFS_CONSOLE_PORT:-9001}:9001 # Web console port
     environment:
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
@@ -262,7 +250,7 @@ services:
       timeout: 5s
       retries: 10
   rustfs-init:
-    image: amazon/aws-cli:latest
+    image: ${DC_AWS_CLI_IMAGE:-amazon/aws-cli:2.32.31}
     depends_on:
       rustfs:
         condition: service_healthy
