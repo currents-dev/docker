@@ -250,7 +250,7 @@ services:
       timeout: 5s
       retries: 10
   rustfs-init:
-    image: ${DC_AWS_CLI_IMAGE:-amazon/aws-cli:latest}
+    image: ${DC_AWS_CLI_IMAGE:-amazon/aws-cli:2.32.31}
     depends_on:
       rustfs:
         condition: service_healthy
