@@ -71,6 +71,12 @@ setup_env_file() {
         sed -i.bak "s|^CLICKHOUSE_CURRENTS_PASSWORD=.*|CLICKHOUSE_CURRENTS_PASSWORD=$CLICKHOUSE_CURRENTS|" "$ENV_FILE"
     fi
     
+    # Generate MONGODB_PASSWORD
+    MONGODB_PASS=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
+    if grep -q "^MONGODB_PASSWORD=" "$ENV_FILE"; then
+        sed -i.bak "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$MONGODB_PASS|" "$ENV_FILE"
+    fi
+    
     # Generate GITLAB_STATE_SECRET (RSA private key, base64 encoded)
     GITLAB_KEY_FILE="$ON_PREM_DIR/.gitlab-key.pem"
     if [ ! -f "$GITLAB_KEY_FILE" ]; then
