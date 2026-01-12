@@ -1,0 +1,103 @@
+# Traefik reverse proxy for TLS termination
+# Provides single wildcard certificate TLS termination for Currents services
+
+services:
+  traefik:
+    hostname: traefik
+    image: ${DC_TRAEFIK_IMAGE:-traefik:v3.3}
+    restart: unless-stopped
+    profiles:
+      - tls
+    environment:
+      TRAEFIK_ENABLE_STORAGE: ${TRAEFIK_ENABLE_STORAGE:-false}
+      TRAEFIK_GENERATE_TEMP_CERTS: ${TRAEFIK_GENERATE_TEMP_CERTS:-false}
+    ports:
+      - ${DC_TRAEFIK_HTTP_PORT:-80}:80
+      - ${DC_TRAEFIK_HTTPS_PORT:-443}:443
+    networks:
+      - default
+    volumes:
+      - ${DC_TRAEFIK_CERTS_DIR:-./data/traefik/certs}:/certs
+      - ${DC_TRAEFIK_CONFIG_DIR:-./data/traefik/config}:/traefik-config:ro
+    command:
+      # Entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # HTTP to HTTPS redirect
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      # TLS configuration (file-based certificates)
+      - --entrypoints.websecure.http.tls=true
+      # File provider for dynamic configuration
+      - --providers.file.filename=${DC_TRAEFIK_DYNAMIC_CONFIG_PATH:-/etc/traefik/dynamic.yml}
+      - --providers.file.watch=true
+      # Enable API for healthcheck (insecure mode, internal only)
+      - --api.insecure=true
+      - --api.dashboard=false
+      # Health check endpoint
+      - --ping=true
+    configs:
+      - source: traefik_dynamic
+        target: /etc/traefik/dynamic.yml
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+configs:
+  traefik_dynamic:
+    content: |
+      # Traefik dynamic configuration (supports Go templating with sprig)
+      {{- if ne (env "TRAEFIK_GENERATE_TEMP_CERTS") "true" }}
+      tls:
+        certificates:
+          - certFile: /certs/wildcard.crt
+            keyFile: /certs/wildcard.key
+      {{- end }}
+
+      http:
+        routers:
+          # API / Dashboard service
+          api:
+            rule: "Host(`${TRAEFIK_API_SUBDOMAIN:-currents-app}.${TRAEFIK_DOMAIN}`)"
+            service: api
+            entryPoints:
+              - websecure
+            tls: {}
+
+          # Director service (record API)
+          director:
+            rule: "Host(`${TRAEFIK_DIRECTOR_SUBDOMAIN:-currents-record}.${TRAEFIK_DOMAIN}`)"
+            service: director
+            entryPoints:
+              - websecure
+            tls: {}
+
+          {{- if eq (env "TRAEFIK_ENABLE_STORAGE") "true" }}
+          # RustFS S3 API (conditionally enabled)
+          storage:
+            rule: "Host(`${TRAEFIK_STORAGE_SUBDOMAIN:-currents-storage}.${TRAEFIK_DOMAIN}`)"
+            service: rustfs
+            entryPoints:
+              - websecure
+            tls: {}
+          {{- end }}
+
+        services:
+          api:
+            loadBalancer:
+              servers:
+                - url: "http://api:4000"
+
+          director:
+            loadBalancer:
+              servers:
+                - url: "http://director:1234"
+
+          {{- if eq (env "TRAEFIK_ENABLE_STORAGE") "true" }}
+          rustfs:
+            loadBalancer:
+              servers:
+                - url: "http://rustfs:9000"
+          {{- end }}
