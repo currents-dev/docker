@@ -65,8 +65,10 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          dnf install -y podman python3-pip git
-          pip3 install docker-compose
+          dnf install -y podman git curl
+          # Download pre-built docker-compose binary (avoids pip compilation issues)
+          curl -L "https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,6 +77,7 @@ jobs:
         run: |
           podman --version
           docker-compose --version
+          podman compose version
 
       - name: Create minimal .env for validation
         working-directory: on-prem
