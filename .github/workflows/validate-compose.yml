@@ -62,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
+      options: --privileged
     steps:
       - name: Install dependencies
         run: |
