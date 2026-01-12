@@ -37,3 +37,8 @@ services:
       sh -c "aws --endpoint-url=http://rustfs:9000 s3 mb s3://currents || true"
     networks:
       - default
+
+  # Enable RustFS storage routing in Traefik
+  traefik:
+    environment:
+      TRAEFIK_ENABLE_STORAGE: "true"
