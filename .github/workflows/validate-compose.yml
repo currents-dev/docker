@@ -70,6 +70,12 @@ jobs:
           curl -L "https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
 
+      - name: Start Podman socket
+        run: |
+          # Start Podman's Docker-compatible REST API socket
+          podman system service --time=0 unix:///tmp/podman.sock &
+          echo "DOCKER_HOST=unix:///tmp/podman.sock" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v4
 
