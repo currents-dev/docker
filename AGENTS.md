@@ -26,6 +26,16 @@
   image: ${DC_MONGODB_IMAGE:-mongo:8.2.3}
   ```
 
+### Environment Variables
+
+- **Use key-value format** instead of array format for `environment:` sections - makes files more extensible and easier to merge:
+  ```yaml
+  environment:
+    KEY: value
+    ANOTHER_KEY: ${VAR}
+  ```
+  Not: `environment: - KEY=value` (array format)
+
 ### Initialization
 
 - Use `command` instead of `entrypoint` when you want to keep the default Docker entrypoint behavior
@@ -58,3 +68,18 @@
 - `generate-compose.sh` merges templates into final compose files
 - `setup.sh` generates secrets using `generate-secrets.sh`
 - `.env.example` documents all configurable variables
+
+
+## Environment Variables Reference
+
+When adding new environment variables, ensure they're documented in `.env.example`. Key variables that should be present:
+
+- **Authentication**: `JWT_SECRET`, `JWT_SECRET_EXPIRY`, `API_SECRET` (internal service-to-service auth)
+- **ClickHouse**: `CLICKHOUSE_CURRENTS_PASSWORD`, `CLICKHOUSE_ACCESS_TOKEN` (optional token-based auth)
+- **Object Storage**: `FILE_STORAGE_REGION` (required for AWS S3, optional for local/MinIO)
+- **Initial Setup**: `ON_PREM_EMAIL` (root admin user email)
+
+## CI/CD
+
+- GitHub workflows validate compose files using `docker compose config` and `podman compose config`
+- Validation runs on both Ubuntu (Docker) and AlmaLinux 8 (Podman) to ensure compatibility
