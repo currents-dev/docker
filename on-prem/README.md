@@ -2,25 +2,35 @@
 
 Docker Compose configuration for running Currents on-premises.
 
-## Quick Start
+## Documentation
 
-```bash
-# Run the interactive setup
-./scripts/setup.sh
+📚 **For setup and configuration instructions, see the [docs](./docs/) folder:**
+
+- [Quickstart Guide](./docs/quickstart.md) — Get up and running
+- [Configuration Reference](./docs/configuration.md) — All environment variables
+- [Support Policy](./docs/support.md) — What's supported
+
+---
+
+## Development Guide
+
+This section is for developers working on the docker-compose configuration itself.
+
+### Architecture
+
+The configuration is built from modular templates that are merged together based on the selected profile. This allows users to include only the services they need.
+
+```
+templates/
+├── compose.currents.yml    # Core Currents application services (always included)
+├── compose.redis.yml       # Redis cache
+├── compose.mongodb.yml     # MongoDB database
+├── compose.clickhouse.yml  # ClickHouse analytics
+├── compose.rustfs.yml      # S3-compatible object storage
+└── compose.traefik.yml     # TLS termination proxy (optional profile)
 ```
 
-This will:
-1. Guide you through selecting a configuration profile
-2. Generate the appropriate `docker-compose.yml`
-3. Create a `.env` file with auto-generated secrets
-
-Then start the services:
-
-```bash
-docker compose up -d
-```
-
-## Configuration Profiles
+### Configuration Profiles
 
 | Profile | Services Included | Use Case |
 |---------|-------------------|----------|
@@ -28,20 +38,16 @@ docker compose up -d
 | `database` | Redis, MongoDB, ClickHouse | External S3-compatible storage |
 | `cache` | Redis | External MongoDB, ClickHouse, and S3 |
 
-## Scripts
+### Scripts
 
-### `scripts/setup.sh`
+#### `scripts/setup.sh`
 
 Interactive setup wizard that:
 - Prompts for profile selection (or custom service selection)
 - Generates the docker-compose configuration
 - Creates `.env` from `.env.example` with auto-generated secrets
 
-```bash
-./scripts/setup.sh
-```
-
-### `scripts/generate-compose.sh`
+#### `scripts/generate-compose.sh`
 
 Generates a docker-compose file for a specific profile. Used by `setup.sh` but can also be run directly.
 
@@ -75,7 +81,7 @@ Generates a docker-compose file for a specific profile. Used by `setup.sh` but c
 | `clickhouse` | ClickHouse only |
 | `rustfs` | RustFS only |
 
-### `scripts/generate-secrets.sh`
+#### `scripts/generate-secrets.sh`
 
 Utility for generating secrets and keys.
 
@@ -90,7 +96,7 @@ Utility for generating secrets and keys.
 ./scripts/generate-secrets.sh key mykey.pem
 ```
 
-## Files
+### Files
 
 | File | Description |
 |------|-------------|
@@ -101,32 +107,11 @@ Utility for generating secrets and keys.
 | `.env` | Your environment configuration (git-ignored) |
 | `.env.example` | Template for environment configuration |
 | `templates/` | Source templates for compose generation |
+| `docs/` | User-facing documentation |
 
-## Environment Configuration
+### Services
 
-Copy `.env.example` to `.env` and configure as needed. The `setup.sh` script does this automatically and generates required secrets.
-
-### Application Variables
-
-- `JWT_SECRET` - Authentication token secret
-- `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` - RustFS credentials
-- `GITLAB_STATE_SECRET` - GitLab integration key (base64-encoded PEM)
-
-### Compose-Only Variables
-
-Variables prefixed with `DC_` are used only by docker-compose (not passed to containers):
-
-- `DC_IMAGE_REPOSITORY` - Docker image repository prefix
-- `DC_IMAGE_TAG` - Docker image tag
-- `DC_REDIS_VOLUME` - Redis data volume path
-- `DC_MONGODB_VOLUME` - MongoDB data volume path
-- `DC_CLICKHOUSE_VOLUME` - ClickHouse data volume path
-- `DC_RUSTFS_VOLUME` - RustFS data volume path
-- `DC_SCHEDULER_STARTUP_VOLUME` - Scheduler startup data volume path
-
-## Services
-
-### Currents Application
+#### Currents Application
 - **director** (port 1234) - Test orchestration service
 - **api** (port 4000) - API and dashboard
 - **changestreams-worker** - MongoDB change stream processor
@@ -134,15 +119,18 @@ Variables prefixed with `DC_` are used only by docker-compose (not passed to con
 - **scheduler** - Scheduled tasks and startup migrations
 - **webhooks** - Webhook delivery service
 
-### Data Services (optional, based on profile)
-- **redis** (port 6379, 8001) - Cache and pub/sub
+#### Data Services (optional, based on profile)
+- **redis** (port 6379) - Cache and pub/sub
 - **mongodb** (port 27017) - Primary database
 - **clickhouse** (port 8123, 9123) - Analytics database
 - **rustfs** (port 9000, 9001) - S3-compatible object storage
 
-## Development
+#### Optional Services
+- **traefik** (ports 80, 443) - TLS termination proxy (enabled with `--profile tls`)
 
-To regenerate the pre-committed docker-compose files after modifying templates:
+### Regenerating Compose Files
+
+After modifying templates, regenerate the pre-committed docker-compose files:
 
 ```bash
 ./scripts/generate-compose.sh full
@@ -152,3 +140,9 @@ To regenerate the pre-committed docker-compose files after modifying templates:
 
 A GitHub Action validates that committed compose files stay in sync with templates.
 
+### Variable Naming Convention
+
+- **`DC_` prefix**: Docker-compose-only variables (not passed to containers)
+  - `DC_MONGODB_PORT`, `DC_CURRENTS_IMAGE_TAG`, `DC_REDIS_VOLUME`
+- **No prefix**: App config variables that containers need
+  - `MONGODB_PASSWORD`, `APP_BASE_URL`, `CLICKHOUSE_CURRENTS_PASSWORD`
