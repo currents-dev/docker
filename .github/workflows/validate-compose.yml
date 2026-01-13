@@ -1,0 +1,117 @@
+name: Validate Docker Compose Files
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/docker-compose.database.yml'
+      - 'on-prem/docker-compose.cache.yml'
+  pull_request:
+    paths:
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/docker-compose.database.yml'
+      - 'on-prem/docker-compose.cache.yml'
+
+jobs:
+  validate-docker:
+    name: Validate with Docker (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print versions
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Create minimal .env for validation
+        working-directory: on-prem
+        run: |
+          cat > .env << 'EOF'
+          # Minimal env file for docker compose config validation
+          CLICKHOUSE_CURRENTS_PASSWORD=placeholder
+          TRAEFIK_DOMAIN=example.com
+          EOF
+
+      - name: Validate docker-compose.full.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.full.yml..."
+          docker compose -f docker-compose.full.yml config --quiet
+          echo "✅ docker-compose.full.yml is valid"
+
+      - name: Validate docker-compose.database.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.database.yml..."
+          docker compose -f docker-compose.database.yml config --quiet
+          echo "✅ docker-compose.database.yml is valid"
+
+      - name: Validate docker-compose.cache.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.cache.yml..."
+          docker compose -f docker-compose.cache.yml config --quiet
+          echo "✅ docker-compose.cache.yml is valid"
+
+  validate-podman:
+    name: Validate with Podman (AlmaLinux 8)
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+      options: --privileged
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y podman git curl
+          # Download pre-built docker-compose binary (avoids pip compilation issues)
+          curl -L "https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print versions
+        run: |
+          podman --version
+          docker-compose --version
+
+      - name: Create minimal .env for validation
+        working-directory: on-prem
+        run: |
+          cat > .env << 'EOF'
+          # Minimal env file for podman compose config validation
+          CLICKHOUSE_CURRENTS_PASSWORD=placeholder
+          TRAEFIK_DOMAIN=example.com
+          EOF
+
+      - name: Validate docker-compose.full.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.full.yml with podman compose..."
+          # Start Podman socket and run compose with DOCKER_HOST pointing to it
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.full.yml config --quiet
+          echo "✅ docker-compose.full.yml is valid"
+
+      - name: Validate docker-compose.database.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.database.yml with podman compose..."
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.database.yml config --quiet
+          echo "✅ docker-compose.database.yml is valid"
+
+      - name: Validate docker-compose.cache.yml
+        working-directory: on-prem
+        run: |
+          echo "Validating docker-compose.cache.yml with podman compose..."
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.cache.yml config --quiet
+          echo "✅ docker-compose.cache.yml is valid"

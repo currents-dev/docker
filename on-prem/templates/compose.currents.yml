@@ -12,7 +12,8 @@ services:
     networks:
       - default
     environment:
-      - CURRENTS_ENV=onprem
+      CURRENTS_ENV: onprem
+      EMAIL_TRANSPORTER: smtp
 
   api:
     hostname: api
@@ -25,9 +26,10 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - INCLUDE_DASHBOARD=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      INCLUDE_DASHBOARD: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
 
   changestreams-worker:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-dev}
@@ -37,8 +39,9 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
 
   write-worker:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-dev}
@@ -48,8 +51,9 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
 
   scheduler:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-dev}
@@ -59,9 +63,10 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
-      - RUN_STARTUP_TASKS=true
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      RUN_STARTUP_TASKS: "true"
+      EMAIL_TRANSPORTER: smtp
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
 
@@ -73,7 +78,8 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
+      CURRENTS_ENV: onprem
+      EMAIL_TRANSPORTER: smtp
 
 networks:
   default: null

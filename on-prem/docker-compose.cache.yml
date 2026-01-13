@@ -23,7 +23,8 @@ services:
     networks:
       - default
     environment:
-      - CURRENTS_ENV=onprem
+      CURRENTS_ENV: onprem
+      EMAIL_TRANSPORTER: smtp
     depends_on:
       redis:
         condition: service_started
@@ -39,9 +40,10 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - INCLUDE_DASHBOARD=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      INCLUDE_DASHBOARD: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
     depends_on:
       redis:
         condition: service_started
@@ -54,8 +56,9 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
     depends_on:
       redis:
         condition: service_started
@@ -68,8 +71,9 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      EMAIL_TRANSPORTER: smtp
     depends_on:
       redis:
         condition: service_started
@@ -82,9 +86,10 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_CURRENTS_PASSWORD}
-      - RUN_STARTUP_TASKS=true
+      CURRENTS_ENV: onprem
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
+      RUN_STARTUP_TASKS: "true"
+      EMAIL_TRANSPORTER: smtp
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
@@ -99,7 +104,8 @@ services:
     env_file:
       - .env
     environment:
-      - CURRENTS_ENV=onprem
+      CURRENTS_ENV: onprem
+      EMAIL_TRANSPORTER: smtp
     depends_on:
       redis:
         condition: service_started

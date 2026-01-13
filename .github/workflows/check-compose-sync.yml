@@ -2,6 +2,8 @@ name: Check Compose Files Sync
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'on-prem/templates/**'
       - 'on-prem/scripts/generate-compose.sh'
