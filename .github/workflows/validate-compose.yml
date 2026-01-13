@@ -74,17 +74,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Start Podman socket
-        run: |
-          # Start Podman's Docker-compatible REST API socket
-          podman system service --time=0 unix:///tmp/podman.sock &
-          echo "DOCKER_HOST=unix:///tmp/podman.sock" >> $GITHUB_ENV
-
       - name: Print versions
         run: |
           podman --version
           docker-compose --version
-          podman compose version
 
       - name: Create minimal .env for validation
         working-directory: on-prem
@@ -99,19 +92,26 @@ jobs:
         working-directory: on-prem
         run: |
           echo "Validating docker-compose.full.yml with podman compose..."
-          podman compose -f docker-compose.full.yml config --quiet
+          # Start Podman socket and run compose with DOCKER_HOST pointing to it
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.full.yml config --quiet
           echo "✅ docker-compose.full.yml is valid"
 
       - name: Validate docker-compose.database.yml
         working-directory: on-prem
         run: |
           echo "Validating docker-compose.database.yml with podman compose..."
-          podman compose -f docker-compose.database.yml config --quiet
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.database.yml config --quiet
           echo "✅ docker-compose.database.yml is valid"
 
       - name: Validate docker-compose.cache.yml
         working-directory: on-prem
         run: |
           echo "Validating docker-compose.cache.yml with podman compose..."
-          podman compose -f docker-compose.cache.yml config --quiet
+          podman system service --time=0 unix:///tmp/podman.sock &
+          sleep 1
+          DOCKER_HOST=unix:///tmp/podman.sock podman compose -f docker-compose.cache.yml config --quiet
           echo "✅ docker-compose.cache.yml is valid"
