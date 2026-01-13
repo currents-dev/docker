@@ -68,7 +68,29 @@
 - `generate-compose.sh` merges templates into final compose files
 - `setup.sh` generates secrets using `generate-secrets.sh`
 - `.env.example` documents all configurable variables
+- Documentation lives in `on-prem/docs/`
 
+## Documentation Requirements
+
+**Always update documentation when making changes.** The docs folder (`on-prem/docs/`) contains user-facing documentation that must stay in sync with the codebase.
+
+### When to Update Each File
+
+| File | Update When... |
+|------|----------------|
+| `docs/configuration.md` | Adding/removing/changing environment variables, changing defaults, adding new `DC_*` variables |
+| `docs/quickstart.md` | Changing setup flow, adding new features users need to configure, changing ports/volumes/services |
+| `docs/support.md` | Changing support boundaries, adding new component categories |
+| `docs/README.md` | Adding new documentation pages, changing known limitations |
+| `.env.example` | Adding any new environment variable (always document generation commands for secrets) |
+| `on-prem/README.md` | Changing scripts, profiles, or file structure |
+
+### Documentation Style
+
+- Use tables for configuration references (Variable | Type | Default | Description)
+- Group settings into **Required**, **Frequently Used**, and **Other** sections
+- Include example values and generation commands for secrets
+- Document both localhost development and production deployment patterns
 
 ## Environment Variables Reference
 

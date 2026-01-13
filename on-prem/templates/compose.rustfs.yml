@@ -42,3 +42,28 @@ services:
   traefik:
     environment:
       TRAEFIK_ENABLE_STORAGE: "true"
+
+  # Configure Currents services to use path-style S3 URLs (required for RustFS)
+  director:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  api:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  changestreams-worker:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  write-worker:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  scheduler:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  webhooks:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"

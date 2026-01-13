@@ -53,6 +53,12 @@ setup_env_file() {
         sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" "$ENV_FILE"
     fi
     
+    # Generate API_SECRET
+    API_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 64)
+    if grep -q "^API_SECRET=" "$ENV_FILE"; then
+        sed -i.bak "s|^API_SECRET=.*|API_SECRET=$API_SECRET|" "$ENV_FILE"
+    fi
+    
     # Generate RUSTFS_SECRET_KEY
     RUSTFS_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
     if grep -q "^RUSTFS_SECRET_KEY=" "$ENV_FILE"; then

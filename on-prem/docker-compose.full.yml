@@ -11,7 +11,7 @@ name: currents_full
 # RustFS service configuration
 # S3-compatible object storage - usually excluded when using external S3/cloud storage
 services:
-  # Currents services depend on redis
+  # Configure Currents services to use path-style S3 URLs (required for RustFS)
   director:
     hostname: director
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-dev}
@@ -25,6 +25,7 @@ services:
     environment:
       CURRENTS_ENV: onprem
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -50,6 +51,7 @@ services:
       INCLUDE_DASHBOARD: onprem
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -71,6 +73,7 @@ services:
       CURRENTS_ENV: onprem
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -92,6 +95,7 @@ services:
       CURRENTS_ENV: onprem
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -114,6 +118,7 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       RUN_STARTUP_TASKS: "true"
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
@@ -136,6 +141,7 @@ services:
     environment:
       CURRENTS_ENV: onprem
       EMAIL_TRANSPORTER: smtp
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
         condition: service_healthy
