@@ -47,16 +47,22 @@ setup_env_file() {
     
     echo "Generating secrets..."
     
-    # Generate JWT_SECRET
-    JWT_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 64)
-    if grep -q "^JWT_SECRET=" "$ENV_FILE"; then
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" "$ENV_FILE"
+    # Generate BETTER_AUTH_SECRET
+    BETTER_AUTH_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 64)
+    if grep -q "^BETTER_AUTH_SECRET=" "$ENV_FILE"; then
+        sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET|" "$ENV_FILE"
     fi
     
     # Generate API_SECRET
     API_SECRET=$("$SCRIPT_DIR/generate-secrets.sh" token 64)
     if grep -q "^API_SECRET=" "$ENV_FILE"; then
         sed -i.bak "s|^API_SECRET=.*|API_SECRET=$API_SECRET|" "$ENV_FILE"
+    fi
+    
+    # Generate ON_PREM_PASSWORD (initial admin user password)
+    ON_PREM_PASSWORD=$("$SCRIPT_DIR/generate-secrets.sh" token 32)
+    if grep -q "^ON_PREM_PASSWORD=" "$ENV_FILE"; then
+        sed -i.bak "s|^ON_PREM_PASSWORD=.*|ON_PREM_PASSWORD=$ON_PREM_PASSWORD|" "$ENV_FILE"
     fi
     
     # Generate RUSTFS_SECRET_KEY
