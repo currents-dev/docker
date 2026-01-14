@@ -11,7 +11,7 @@
 # Outputs: API_KEY and PROJECT_ID to stdout (can be eval'd)
 #
 # Example:
-#   eval $(./seed-database.sh)
+#   eval $(./scripts/smoke-test/seed-database.sh)
 #   echo $API_KEY $PROJECT_ID
 
 set -e
@@ -38,17 +38,15 @@ generate_api_key() {
 
 PROJECT_ID=$(generate_project_id)
 API_KEY=$(generate_api_key)
+ROOT_EMAIL="${ON_PREM_EMAIL:-root@currents.local}"
 
-# Run MongoDB commands to seed the database
-docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
-  -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
-  --quiet <<EOF
-
+# Create the MongoDB seed script
+SEED_SCRIPT=$(cat <<MONGOSCRIPT
 // Switch to currents database
 db = db.getSiblingDB("currents");
 
 // Find the root user created by the API container
-const rootEmail = "${ON_PREM_EMAIL:-root@currents.local}";
+const rootEmail = "${ROOT_EMAIL}";
 const user = db.user.findOne({ email: rootEmail });
 
 if (!user) {
@@ -149,10 +147,19 @@ if (!apiKeyResult.acknowledged) {
 print("Created API key");
 
 print("SUCCESS");
-EOF
+MONGOSCRIPT
+)
+
+# Run MongoDB commands using --eval instead of heredoc
+echo "Running MongoDB seed script..." >&2
+RESULT=$(docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
+  -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
+  --quiet --eval "$SEED_SCRIPT" 2>&1)
+
+echo "$RESULT" >&2
 
 # Check if MongoDB commands succeeded
-if [ $? -ne 0 ]; then
+if ! echo "$RESULT" | grep -q "SUCCESS"; then
     echo "❌ Failed to seed database" >&2
     exit 1
 fi
