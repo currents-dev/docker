@@ -7,6 +7,7 @@ This guide walks you through setting up Currents on-premises using Docker Compos
 - **Docker** 20.10+ with Docker Compose V2, or **Podman** 4.0+ with docker-compose
 - At least 8GB RAM available for containers
 - Git (for cloning the repository)
+- **Container image access** — see [Container Image Access](./container-images.md) to set up AWS ECR access and mirror images to your registry
 
 ## Step 1: Clone the Repository
 

@@ -14,7 +14,7 @@ services:
   # Currents services depend on redis
   director:
     hostname: director
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-staging}
     ports:
       - ${DC_DIRECTOR_PORT:-1234}:1234
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
         required: false
   api:
     hostname: api
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-staging}
     ports:
       - ${DC_API_PORT:-4000}:4000
     restart: unless-stopped
@@ -62,7 +62,7 @@ services:
         condition: service_started
         required: false
   changestreams-worker:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -83,7 +83,7 @@ services:
         condition: service_started
         required: false
   write-worker:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -104,7 +104,7 @@ services:
         condition: service_started
         required: false
   scheduler:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -128,7 +128,7 @@ services:
         condition: service_started
         required: false
   webhooks:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
