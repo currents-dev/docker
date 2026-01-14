@@ -1,0 +1,108 @@
+name: Smoke Test Services
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/templates/**'
+  pull_request:
+    paths:
+      - 'on-prem/docker-compose.full.yml'
+      - 'on-prem/templates/**'
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: Smoke Test (Redis + MongoDB)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create minimal .env
+        working-directory: on-prem
+        run: |
+          cat > .env << 'EOF'
+          # Minimal env for smoke testing Redis and MongoDB
+          MONGODB_USERNAME=testuser
+          MONGODB_PASSWORD=testpassword
+          CLICKHOUSE_CURRENTS_PASSWORD=placeholder
+          TRAEFIK_DOMAIN=example.com
+          EOF
+
+      - name: Start Redis and MongoDB
+        working-directory: on-prem
+        run: |
+          docker compose -f docker-compose.full.yml up -d redis mongodb
+          echo "Waiting for services to start..."
+
+      - name: Wait for Redis
+        working-directory: on-prem
+        run: |
+          echo "Waiting for Redis to be ready..."
+          for i in {1..30}; do
+            if docker compose -f docker-compose.full.yml exec -T redis redis-cli ping | grep -q PONG; then
+              echo "✅ Redis is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30 - Redis not ready yet..."
+            sleep 2
+          done
+          echo "❌ Redis failed to start"
+          docker compose -f docker-compose.full.yml logs redis
+          exit 1
+
+      - name: Wait for MongoDB
+        working-directory: on-prem
+        run: |
+          echo "Waiting for MongoDB to be healthy..."
+          for i in {1..60}; do
+            if docker compose -f docker-compose.full.yml exec -T mongodb mongosh --quiet --eval "db.runCommand('ping').ok" localhost:27017 2>/dev/null | grep -q 1; then
+              echo "✅ MongoDB is ready"
+              exit 0
+            fi
+            echo "Attempt $i/60 - MongoDB not ready yet..."
+            sleep 2
+          done
+          echo "❌ MongoDB failed to start"
+          docker compose -f docker-compose.full.yml logs mongodb
+          exit 1
+
+      - name: Test Redis connectivity
+        working-directory: on-prem
+        run: |
+          echo "Testing Redis SET/GET..."
+          docker compose -f docker-compose.full.yml exec -T redis redis-cli SET smoke_test "hello"
+          RESULT=$(docker compose -f docker-compose.full.yml exec -T redis redis-cli GET smoke_test)
+          if [ "$RESULT" = "hello" ]; then
+            echo "✅ Redis SET/GET working"
+          else
+            echo "❌ Redis SET/GET failed: got '$RESULT'"
+            exit 1
+          fi
+
+      - name: Test MongoDB connectivity
+        working-directory: on-prem
+        run: |
+          echo "Testing MongoDB insert/find..."
+          docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
+            -u testuser -p testpassword --authenticationDatabase admin \
+            --quiet --eval '
+              db = db.getSiblingDB("smoke_test");
+              db.test.insertOne({name: "smoke_test", timestamp: new Date()});
+              const doc = db.test.findOne({name: "smoke_test"});
+              if (doc) {
+                print("✅ MongoDB insert/find working");
+              } else {
+                print("❌ MongoDB insert/find failed");
+                quit(1);
+              }
+            '
+
+      - name: Cleanup
+        if: always()
+        working-directory: on-prem
+        run: |
+          docker compose -f docker-compose.full.yml down -v --remove-orphans
