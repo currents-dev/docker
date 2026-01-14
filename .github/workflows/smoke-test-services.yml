@@ -30,16 +30,16 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Create minimal .env
+      - name: Setup environment
+        working-directory: on-prem
+        run: ./scripts/setup.sh --env-only --force
+
+      - name: Pull Currents images
         working-directory: on-prem
         run: |
-          cat > .env << 'EOF'
-          # Minimal env for smoke testing Redis and MongoDB
-          MONGODB_USERNAME=testuser
-          MONGODB_PASSWORD=testpassword
-          CLICKHOUSE_CURRENTS_PASSWORD=placeholder
-          TRAEFIK_DOMAIN=example.com
-          EOF
+          echo "Pulling all Currents service images from ECR..."
+          docker compose -f docker-compose.full.yml pull director api changestreams-worker write-worker scheduler webhooks
+          echo "✅ All Currents images pulled successfully"
 
       - name: Start Redis and MongoDB
         working-directory: on-prem
@@ -95,9 +95,11 @@ jobs:
       - name: Test MongoDB connectivity
         working-directory: on-prem
         run: |
+          # Source credentials from generated .env
+          source .env
           echo "Testing MongoDB insert/find..."
           docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
-            -u testuser -p testpassword --authenticationDatabase admin \
+            -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
             --quiet --eval '
               db = db.getSiblingDB("smoke_test");
               db.test.insertOne({name: "smoke_test", timestamp: new Date()});

@@ -3,6 +3,10 @@
 # Interactive setup script for Currents on-prem
 # Generates a docker-compose file based on your infrastructure choices
 # and sets it as the default docker-compose.yml
+#
+# Usage:
+#   ./setup.sh              # Interactive setup (profile selection + env generation)
+#   ./setup.sh --env-only   # Only generate .env file with secrets (non-interactive)
 
 set -e
 
@@ -16,27 +20,56 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}"
-echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║           Currents On-Prem Setup                          ║"
-echo "╚═══════════════════════════════════════════════════════════╝"
-echo -e "${NC}"
-
-echo "This script will help you generate a docker-compose configuration"
-echo "based on which services you want to run locally vs externally."
-echo ""
+# Parse arguments
+ENV_ONLY=false
+FORCE_REGEN=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --env-only)
+            ENV_ONLY=true
+            shift
+            ;;
+        --force)
+            FORCE_REGEN=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --env-only    Only generate .env file with secrets (non-interactive)"
+            echo "  --force       Force regenerate secrets even if .env exists"
+            echo "  -h, --help    Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 # =============================================================================
 # Environment file setup
 # =============================================================================
+# Define setup_env_file function first (used by both modes)
 setup_env_file() {
     cd "$ON_PREM_DIR"
     
     if [ -f .env ]; then
         echo -e "${YELLOW}Found existing .env file${NC}"
-        read -p "Regenerate secrets in .env? [y/N]: " regen_secrets
-        if [[ ! $regen_secrets =~ ^[Yy] ]]; then
+        if [ "$FORCE_REGEN" = true ]; then
+            echo "Force regenerating secrets..."
+        elif [ "$ENV_ONLY" = true ]; then
+            # Non-interactive mode: skip if .env exists and --force not set
+            echo "Using existing .env file (use --force to regenerate secrets)"
             return
+        else
+            read -p "Regenerate secrets in .env? [y/N]: " regen_secrets
+            if [[ ! $regen_secrets =~ ^[Yy] ]]; then
+                return
+            fi
         fi
         ENV_FILE=".env"
     else
@@ -106,8 +139,27 @@ setup_env_file() {
 }
 
 # =============================================================================
-# Profile selection
+# Handle --env-only mode
 # =============================================================================
+if [ "$ENV_ONLY" = true ]; then
+    setup_env_file
+    echo -e "${GREEN}✓ Environment setup complete!${NC}"
+    exit 0
+fi
+
+# =============================================================================
+# Interactive mode: Profile selection
+# =============================================================================
+echo -e "${BLUE}"
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║           Currents On-Prem Setup                          ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+echo "This script will help you generate a docker-compose configuration"
+echo "based on which services you want to run locally vs externally."
+echo ""
+
 echo -e "${YELLOW}Select a configuration profile:${NC}"
 echo ""
 echo "  1) full      - All services (redis, mongodb, clickhouse, rustfs)"
