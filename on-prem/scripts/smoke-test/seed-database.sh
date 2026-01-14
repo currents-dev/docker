@@ -29,12 +29,12 @@ echo "Seeding database with test data..." >&2
 
 # Generate a random 6-character project ID (alphanumeric)
 generate_project_id() {
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1
+    openssl rand -base64 12 | tr -dc 'a-zA-Z0-9' | head -c 6
 }
 
 # Generate a 64-character API key
 generate_api_key() {
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
+    openssl rand -base64 96 | tr -dc 'a-zA-Z0-9' | head -c 64
 }
 
 echo "[DEBUG] Generating project ID..." >&2

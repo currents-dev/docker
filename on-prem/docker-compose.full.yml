@@ -27,9 +27,6 @@ services:
       EMAIL_TRANSPORTER: smtp
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
       mongodb:
         condition: service_healthy
         required: false
@@ -54,9 +51,6 @@ services:
       EMAIL_TRANSPORTER: smtp
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
       mongodb:
         condition: service_healthy
         required: false
@@ -76,15 +70,13 @@ services:
       EMAIL_TRANSPORTER: smtp
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
       mongodb:
         condition: service_healthy
         required: false
       redis:
         condition: service_started
         required: false
+  # Currents services depend on clickhouse
   write-worker:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
@@ -123,9 +115,6 @@ services:
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
       mongodb:
         condition: service_healthy
         required: false
@@ -144,9 +133,6 @@ services:
       EMAIL_TRANSPORTER: smtp
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
       mongodb:
         condition: service_healthy
         required: false

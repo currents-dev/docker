@@ -58,12 +58,6 @@ services:
       - ${DC_CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
 
   # Currents services depend on clickhouse
-  api:
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-
   write-worker:
     depends_on:
       clickhouse:
