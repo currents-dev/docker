@@ -27,8 +27,10 @@ jobs:
           role-to-assume: arn:aws:iam::761136292957:role/GitHubActions-CurrentsDevDocker-ECRPull
           aws-region: us-east-1
 
-      - name: Login to Amazon ECR
+      - name: Login to Currents ECR
         uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: "513558712013"
 
       - name: Setup environment
         working-directory: on-prem
