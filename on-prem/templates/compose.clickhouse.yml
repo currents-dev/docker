@@ -58,37 +58,13 @@ services:
       - ${DC_CLICKHOUSE_VOLUME:-./data/clickhouse}:/var/lib/clickhouse
 
   # Currents services depend on clickhouse
-  director:
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-
   api:
     depends_on:
       clickhouse:
         condition: service_healthy
         required: false
 
-  changestreams-worker:
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-
   write-worker:
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-
-  scheduler:
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        required: false
-
-  webhooks:
     depends_on:
       clickhouse:
         condition: service_healthy

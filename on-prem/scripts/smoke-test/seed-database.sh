@@ -22,6 +22,7 @@ ON_PREM_DIR="$SCRIPT_DIR/../.."
 cd "$ON_PREM_DIR"
 
 # Source environment variables
+echo "[DEBUG] Sourcing .env file..." >&2
 source .env
 
 echo "Seeding database with test data..." >&2
@@ -36,12 +37,25 @@ generate_api_key() {
     cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
 }
 
+echo "[DEBUG] Generating project ID..." >&2
 PROJECT_ID=$(generate_project_id)
-API_KEY=$(generate_api_key)
-ROOT_EMAIL="${ON_PREM_EMAIL:-root@currents.local}"
+echo "[DEBUG] Project ID: $PROJECT_ID" >&2
 
-# Create the MongoDB seed script
-SEED_SCRIPT=$(cat <<MONGOSCRIPT
+echo "[DEBUG] Generating API key..." >&2
+API_KEY=$(generate_api_key)
+echo "[DEBUG] API key generated" >&2
+
+ROOT_EMAIL="${ON_PREM_EMAIL:-root@currents.local}"
+echo "[DEBUG] Root email: $ROOT_EMAIL" >&2
+
+# Create temp file for the MongoDB script
+echo "[DEBUG] Creating temp file..." >&2
+TEMP_SCRIPT=$(mktemp)
+trap "rm -f $TEMP_SCRIPT" EXIT
+echo "[DEBUG] Temp file: $TEMP_SCRIPT" >&2
+
+echo "[DEBUG] Writing MongoDB script to temp file..." >&2
+cat > "$TEMP_SCRIPT" <<MONGOSCRIPT
 // Switch to currents database
 db = db.getSiblingDB("currents");
 
@@ -148,14 +162,31 @@ print("Created API key");
 
 print("SUCCESS");
 MONGOSCRIPT
-)
 
-# Run MongoDB commands using --eval instead of heredoc
-echo "Running MongoDB seed script..." >&2
-RESULT=$(docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
+echo "[DEBUG] MongoDB script written" >&2
+
+# Get the container name
+echo "[DEBUG] Getting MongoDB container ID..." >&2
+CONTAINER=$(docker compose -f docker-compose.full.yml ps -q mongodb)
+echo "[DEBUG] Container ID: $CONTAINER" >&2
+
+if [ -z "$CONTAINER" ]; then
+    echo "❌ MongoDB container not found" >&2
+    exit 1
+fi
+
+# Copy script into container
+echo "[DEBUG] Copying seed script to container..." >&2
+docker cp "$TEMP_SCRIPT" "$CONTAINER:/tmp/seed.js"
+echo "[DEBUG] Script copied" >&2
+
+# Run the script
+echo "[DEBUG] Running MongoDB seed script..." >&2
+RESULT=$(docker exec "$CONTAINER" mongosh \
   -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
-  --quiet --eval "$SEED_SCRIPT" 2>&1)
+  --quiet --file /tmp/seed.js 2>&1)
 
+echo "[DEBUG] Script execution completed" >&2
 echo "$RESULT" >&2
 
 # Check if MongoDB commands succeeded

@@ -36,13 +36,6 @@ jobs:
         working-directory: on-prem
         run: ./scripts/setup.sh --env-only --force
 
-      - name: Pull Currents images
-        working-directory: on-prem
-        run: |
-          echo "Pulling all Currents service images from ECR..."
-          docker compose -f docker-compose.full.yml pull director api changestreams-worker write-worker scheduler webhooks
-          echo "✅ All Currents images pulled successfully"
-
       - name: Start infrastructure services
         working-directory: on-prem
         run: |
