@@ -12,7 +12,7 @@ on:
 
 jobs:
   smoke-test:
-    name: Smoke Test (Redis + MongoDB)
+    name: API Smoke Test
     runs-on: ubuntu-latest
     permissions:
       id-token: write   # Required for OIDC
@@ -43,11 +43,12 @@ jobs:
           docker compose -f docker-compose.full.yml pull director api changestreams-worker write-worker scheduler webhooks
           echo "✅ All Currents images pulled successfully"
 
-      - name: Start Redis and MongoDB
+      - name: Start infrastructure services
         working-directory: on-prem
         run: |
+          echo "Starting Redis and MongoDB..."
           docker compose -f docker-compose.full.yml up -d redis mongodb
-          echo "Waiting for services to start..."
+          echo "Waiting for services to initialize..."
 
       - name: Wait for Redis
         working-directory: on-prem
@@ -81,38 +82,64 @@ jobs:
           docker compose -f docker-compose.full.yml logs mongodb
           exit 1
 
-      - name: Test Redis connectivity
+      - name: Start application services
         working-directory: on-prem
         run: |
-          echo "Testing Redis SET/GET..."
-          docker compose -f docker-compose.full.yml exec -T redis redis-cli SET smoke_test "hello"
-          RESULT=$(docker compose -f docker-compose.full.yml exec -T redis redis-cli GET smoke_test)
-          if [ "$RESULT" = "hello" ]; then
-            echo "✅ Redis SET/GET working"
-          else
-            echo "❌ Redis SET/GET failed: got '$RESULT'"
-            exit 1
-          fi
+          echo "Starting Scheduler and API..."
+          docker compose -f docker-compose.full.yml up -d scheduler api
+          echo "Waiting for services to initialize..."
 
-      - name: Test MongoDB connectivity
+      - name: Wait for API
         working-directory: on-prem
         run: |
-          # Source credentials from generated .env
+          echo "Waiting for API to be ready..."
+          for i in {1..60}; do
+            if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
+              echo "✅ API is ready"
+              exit 0
+            fi
+            echo "Attempt $i/60 - API not ready yet..."
+            sleep 2
+          done
+          echo "❌ API failed to start"
+          docker compose -f docker-compose.full.yml logs api
+          exit 1
+
+      - name: Wait for root user
+        working-directory: on-prem
+        run: |
           source .env
-          echo "Testing MongoDB insert/find..."
-          docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
-            -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
-            --quiet --eval '
-              db = db.getSiblingDB("smoke_test");
-              db.test.insertOne({name: "smoke_test", timestamp: new Date()});
-              const doc = db.test.findOne({name: "smoke_test"});
-              if (doc) {
-                print("✅ MongoDB insert/find working");
-              } else {
-                print("❌ MongoDB insert/find failed");
-                quit(1);
-              }
-            '
+          echo "Waiting for root user to be created..."
+          for i in {1..30}; do
+            if docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
+              -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
+              --quiet --eval "db.getSiblingDB('currents').user.findOne({email: '${ON_PREM_EMAIL:-root@currents.local}'})" 2>/dev/null | grep -q "_id"; then
+              echo "✅ Root user exists"
+              exit 0
+            fi
+            echo "Attempt $i/30 - Root user not created yet..."
+            sleep 2
+          done
+          echo "❌ Root user was not created"
+          docker compose -f docker-compose.full.yml logs api scheduler
+          exit 1
+
+      - name: Seed database
+        id: seed
+        working-directory: on-prem
+        run: |
+          echo "Seeding database with test data..."
+          # Capture the KEY=VALUE output from seed script
+          eval $(./scripts/smoke-test/seed-database.sh)
+          # Export to GitHub Actions output
+          echo "api_key=${API_KEY}" >> $GITHUB_OUTPUT
+          echo "project_id=${PROJECT_ID}" >> $GITHUB_OUTPUT
+
+      - name: Run API smoke test
+        working-directory: on-prem
+        run: |
+          echo "Running API smoke test..."
+          ./scripts/smoke-test/api-test.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.seed.outputs.project_id }}"
 
       - name: Cleanup
         if: always()
