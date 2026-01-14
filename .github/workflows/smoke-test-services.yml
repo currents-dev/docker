@@ -8,9 +8,6 @@ on:
       - 'on-prem/docker-compose.full.yml'
       - 'on-prem/templates/**'
   pull_request:
-    paths:
-      - 'on-prem/docker-compose.full.yml'
-      - 'on-prem/templates/**'
   workflow_dispatch:
 
 jobs:
