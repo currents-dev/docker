@@ -3,7 +3,7 @@
 services:
   director:
     hostname: director
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}director:${DC_CURRENTS_IMAGE_TAG:-staging}
     ports:
       - ${DC_DIRECTOR_PORT:-1234}:1234
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
 
   api:
     hostname: api
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}api:${DC_CURRENTS_IMAGE_TAG:-staging}
     ports:
       - ${DC_API_PORT:-4000}:4000
     restart: unless-stopped
@@ -33,7 +33,7 @@ services:
       EMAIL_TRANSPORTER: smtp
 
   changestreams-worker:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -45,7 +45,7 @@ services:
       EMAIL_TRANSPORTER: smtp
 
   write-worker:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}writer:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -57,7 +57,7 @@ services:
       EMAIL_TRANSPORTER: smtp
 
   scheduler:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
@@ -72,7 +72,7 @@ services:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
 
   webhooks:
-    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-dev}
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}webhooks:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
     networks:
       - default
