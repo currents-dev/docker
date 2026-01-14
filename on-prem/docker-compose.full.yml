@@ -49,6 +49,7 @@ services:
     environment:
       CURRENTS_ENV: onprem
       INCLUDE_DASHBOARD: onprem
+      BETTER_AUTH_ENABLED: "true"
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
