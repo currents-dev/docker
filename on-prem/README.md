@@ -4,11 +4,11 @@ Docker Compose configuration for running Currents on-premises.
 
 ## Documentation
 
-📚 **For setup and configuration instructions, see the [docs](../docs/) folder:**
+📚 **For setup and configuration instructions, see the [documentation site](https://currents-dev.github.io/docker/):**
 
-- [Quickstart Guide](../docs/quickstart.md) — Get up and running
-- [Configuration Reference](../docs/configuration.md) — All environment variables
-- [Support Policy](../docs/support.md) — What's supported
+- [Quickstart Guide](https://currents-dev.github.io/docker/quickstart) — Get up and running
+- [Configuration Reference](https://currents-dev.github.io/docker/configuration) — All environment variables
+- [Support Policy](https://currents-dev.github.io/docker/support) — What's supported
 
 ---
 
@@ -107,7 +107,7 @@ Utility for generating secrets and keys.
 | `.env` | Your environment configuration (git-ignored) |
 | `.env.example` | Template for environment configuration |
 | `templates/` | Source templates for compose generation |
-| `../docs/` | User-facing documentation |
+| [`docs/`](https://currents-dev.github.io/docker/) | User-facing documentation (GitHub Pages) |
 
 ### Services
 

@@ -5,8 +5,8 @@ Docker configurations for running Currents services.
 ## Repository Structure
 
 ```
+├── docs/             # User documentation (published to GitHub Pages)
 ├── on-prem/          # Self-hosted deployment using Docker Compose
-│   ├── docs/         # User documentation
 │   ├── scripts/      # Setup and generation scripts
 │   └── templates/    # Modular compose templates
 └── (future tools)    # Additional Docker configurations may be added here
@@ -14,7 +14,7 @@ Docker configurations for running Currents services.
 
 ## On-Premises
 
-For self-hosted Currents deployment, see the [On-Prem documentation](docs/).
+For self-hosted Currents deployment, see the [On-Prem documentation](https://currents-dev.github.io/docker/).
 
 ```bash
 cd on-prem
