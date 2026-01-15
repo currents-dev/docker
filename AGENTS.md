@@ -68,11 +68,11 @@
 - `generate-compose.sh` merges templates into final compose files
 - `setup.sh` generates secrets using `generate-secrets.sh`
 - `.env.example` documents all configurable variables
-- Documentation lives in `on-prem/docs/`
+- Documentation lives in `docs/`
 
 ## Documentation Requirements
 
-**Always update documentation when making changes.** The docs folder (`on-prem/docs/`) contains user-facing documentation that must stay in sync with the codebase.
+**Always update documentation when making changes.** The docs folder (`docs/`) contains user-facing documentation that must stay in sync with the codebase.
 
 ### When to Update Each File
 
