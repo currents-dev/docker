@@ -9,9 +9,23 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ON_PREM_DIR="$SCRIPT_DIR/../.."
+
 API_KEY="${1:-}"
 PROJECT_ID="${2:-}"
 API_BASE_URL="${API_BASE_URL:-http://localhost:4000/api/v1}"
+
+# Function to show logs on failure
+show_logs_on_failure() {
+    echo ""
+    echo "=========================================="
+    echo "API container logs (last 100 lines):"
+    echo "=========================================="
+    cd "$ON_PREM_DIR"
+    docker compose -f docker-compose.full.yml logs --tail=100 api
+    echo "=========================================="
+}
 
 if [ -z "$API_KEY" ]; then
     echo "❌ Error: API key is required"
@@ -63,6 +77,7 @@ RESPONSE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
 if [ "$HTTP_CODE" != "201" ]; then
     echo "❌ Failed to create action (HTTP $HTTP_CODE)"
     echo "Response: $RESPONSE_BODY"
+    show_logs_on_failure
     exit 1
 fi
 
@@ -71,6 +86,7 @@ ACTION_ID=$(echo "$RESPONSE_BODY" | jq -r '.data.actionId')
 if [ -z "$ACTION_ID" ] || [ "$ACTION_ID" = "null" ]; then
     echo "❌ Failed to extract actionId from response"
     echo "Response: $RESPONSE_BODY"
+    show_logs_on_failure
     exit 1
 fi
 
@@ -91,6 +107,7 @@ RESPONSE_BODY=$(echo "$GET_RESPONSE" | sed '$d')
 if [ "$HTTP_CODE" != "200" ]; then
     echo "❌ Failed to fetch action (HTTP $HTTP_CODE)"
     echo "Response: $RESPONSE_BODY"
+    show_logs_on_failure
     exit 1
 fi
 
@@ -101,6 +118,7 @@ if [ "$FETCHED_NAME" != "$TEST_NAME" ]; then
     echo "❌ Action name mismatch"
     echo "Expected: $TEST_NAME"
     echo "Got: $FETCHED_NAME"
+    show_logs_on_failure
     exit 1
 fi
 

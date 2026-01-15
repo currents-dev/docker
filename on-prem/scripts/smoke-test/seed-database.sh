@@ -158,7 +158,25 @@ if (!apiKeyResult.acknowledged) {
     print("ERROR: Failed to create API key");
     quit(1);
 }
-print("Created API key");
+print("Created API key: " + apiKey.substring(0, 8) + "...");
+
+// Verify the API key was inserted
+const verifyKey = db.apiKeys.findOne({ key: apiKey });
+if (verifyKey) {
+    print("Verified API key exists in database");
+    print("API key orgId: " + verifyKey.orgId);
+} else {
+    print("WARNING: Could not verify API key in database");
+}
+
+// Verify project exists
+const verifyProject = db.projects.findOne({ projectId: projectId });
+if (verifyProject) {
+    print("Verified project exists: " + verifyProject.projectId);
+    print("Project orgId: " + verifyProject.orgId);
+} else {
+    print("WARNING: Could not verify project in database");
+}
 
 print("SUCCESS");
 MONGOSCRIPT
