@@ -25,7 +25,18 @@ Create an IAM role in your AWS account with the following policy:
         "ecr:GetDownloadUrlForLayer"
       ],
       "Resource": [
-        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/*"
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/api/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/api",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/change-streams/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/change-streams",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/director/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/director",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/scheduler/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/scheduler",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/writer/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/writer",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/webhooks/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/webhooks"
       ]
     }
   ]
