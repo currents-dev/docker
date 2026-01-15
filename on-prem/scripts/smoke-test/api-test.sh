@@ -11,7 +11,7 @@ set -e
 
 API_KEY="${1:-}"
 PROJECT_ID="${2:-}"
-API_BASE_URL="${API_BASE_URL:-http://localhost:4000/v1}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:4000/api/v1}"
 
 if [ -z "$API_KEY" ]; then
     echo "❌ Error: API key is required"
