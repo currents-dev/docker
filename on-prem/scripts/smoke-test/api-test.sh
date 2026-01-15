@@ -14,7 +14,7 @@ ON_PREM_DIR="$SCRIPT_DIR/../.."
 
 API_KEY="${1:-}"
 PROJECT_ID="${2:-}"
-API_BASE_URL="${API_BASE_URL:-http://localhost:4000/api/v1}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:4000/v1}"
 
 # Function to show logs on failure
 show_logs_on_failure() {
