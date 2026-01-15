@@ -1,5 +1,7 @@
 # Currents Self-Hosted Documentation (Docker Compose)
 
+Hosted versions of the docs can be viewed at https://currents-dev.github.io/docker/
+
 Currents on-premise installation using Docker Compose provides a containerized deployment for running Currents services on a single host or small-scale infrastructure.
 
 The Docker Compose configuration is modular, allowing you to choose which data services to run locally versus connecting to external managed services.
