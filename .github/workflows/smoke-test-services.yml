@@ -46,8 +46,8 @@ jobs:
       - name: Start infrastructure services
         working-directory: on-prem
         run: |
-          echo "Starting Redis and MongoDB..."
-          docker compose -f docker-compose.full.yml up -d redis mongodb
+          echo "Starting Redis, MongoDB, and MongoDB init..."
+          docker compose -f docker-compose.full.yml up -d redis mongodb mongodb-init
           echo "Waiting for services to initialize..."
 
       - name: Wait for Redis
