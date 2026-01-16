@@ -214,8 +214,8 @@ if ! echo "$RESULT" | grep -q "SUCCESS"; then
 fi
 
 # Output variables that can be eval'd by the caller
-echo "API_KEY=${API_KEY}"
-echo "PROJECT_ID=${PROJECT_ID}"
+printf "API_KEY=%q\n" "${API_KEY}"
+printf "PROJECT_ID=%q\n" "${PROJECT_ID}"
 
 echo "✅ Database seeded successfully" >&2
 echo "   Project ID: ${PROJECT_ID}" >&2

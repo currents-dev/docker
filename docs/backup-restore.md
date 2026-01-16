@@ -196,6 +196,21 @@ tar -xzvf clickhouse-backup-YYYYMMDD.tar.gz
 docker compose up -d
 ```
 
+#### From native backup
+
+```bash
+# Source credentials from .env
+source .env
+
+# Restore backup using clickhouse-client
+docker compose exec clickhouse clickhouse-client \
+  --user currents \
+  --password "$CLICKHOUSE_CURRENTS_PASSWORD" \
+  --query "RESTORE DATABASE currents FROM Disk('backups', 'backup-YYYYMMDD')"
+```
+
+> **Note:** See [ClickHouse restore documentation](https://clickhouse.com/docs/en/operations/backup#restore) for advanced options such as restoring to a different database or renaming tables.
+
 ### RustFS Restore
 
 ```bash

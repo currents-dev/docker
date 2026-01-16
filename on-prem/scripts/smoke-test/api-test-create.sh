@@ -46,7 +46,10 @@ echo "Project ID: $PROJECT_ID" >&2
 # Generate unique name for this test run
 TEST_NAME="smoke-test-action-$(date +%s)"
 
-CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_BASE_URL}/actions?projectId=${PROJECT_ID}" \
+RESPONSE_FILE=$(mktemp)
+trap 'rm -f "$RESPONSE_FILE"' EXIT
+
+HTTP_CODE=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST "${API_BASE_URL}/actions?projectId=${PROJECT_ID}" \
   -H "Authorization: Bearer ${API_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -65,8 +68,7 @@ CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_BASE_URL}/actions?p
     }
   }')
 
-HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
+RESPONSE_BODY=$(cat "$RESPONSE_FILE")
 
 if [ "$HTTP_CODE" != "201" ]; then
     echo "❌ Failed to create action (HTTP $HTTP_CODE)" >&2
@@ -88,5 +90,5 @@ echo "✅ Created action: $ACTION_ID" >&2
 echo "   Name: $TEST_NAME" >&2
 
 # Output for eval
-echo "ACTION_ID=$ACTION_ID"
-echo "TEST_NAME=$TEST_NAME"
+printf "ACTION_ID=%q\n" "$ACTION_ID"
+printf "TEST_NAME=%q\n" "$TEST_NAME"

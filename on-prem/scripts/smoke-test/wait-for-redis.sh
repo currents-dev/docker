@@ -14,16 +14,16 @@ MAX_ATTEMPTS="${1:-30}"
 
 cd "$ON_PREM_DIR"
 
-echo "Waiting for Redis to be ready..."
-for i in $(seq 1 $MAX_ATTEMPTS); do
+echo "Waiting for Redis to be ready..." >&2
+for i in $(seq 1 "$MAX_ATTEMPTS"); do
     if docker compose -f docker-compose.full.yml exec -T redis redis-cli ping 2>/dev/null | grep -q PONG; then
-        echo "✅ Redis is ready"
+        echo "✅ Redis is ready" >&2
         exit 0
     fi
-    echo "Attempt $i/$MAX_ATTEMPTS - Redis not ready yet..."
+    echo "Attempt $i/$MAX_ATTEMPTS - Redis not ready yet..." >&2
     sleep 2
 done
 
-echo "❌ Redis failed to start"
-docker compose -f docker-compose.full.yml logs redis
+echo "❌ Redis failed to start" >&2
+docker compose -f docker-compose.full.yml logs redis >&2
 exit 1

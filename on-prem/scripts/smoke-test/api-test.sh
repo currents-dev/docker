@@ -18,41 +18,44 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:4000/v1}"
 
 # Function to show logs on failure
 show_logs_on_failure() {
-    echo ""
-    echo "=========================================="
-    echo "API container logs (last 100 lines):"
-    echo "=========================================="
+    echo "" >&2
+    echo "==========================================" >&2
+    echo "API container logs (last 100 lines):" >&2
+    echo "==========================================" >&2
     cd "$ON_PREM_DIR"
-    docker compose -f docker-compose.full.yml logs --tail=100 api
-    echo "=========================================="
+    docker compose -f docker-compose.full.yml logs --tail=100 api >&2
+    echo "==========================================" >&2
 }
 
 if [ -z "$API_KEY" ]; then
-    echo "❌ Error: API key is required"
-    echo "Usage: $0 <api_key> <project_id>"
+    echo "❌ Error: API key is required" >&2
+    echo "Usage: $0 <api_key> <project_id>" >&2
     exit 1
 fi
 
 if [ -z "$PROJECT_ID" ]; then
-    echo "❌ Error: Project ID is required"
-    echo "Usage: $0 <api_key> <project_id>"
+    echo "❌ Error: Project ID is required" >&2
+    echo "Usage: $0 <api_key> <project_id>" >&2
     exit 1
 fi
 
-echo "Running API smoke test..."
-echo "API URL: $API_BASE_URL"
-echo "Project ID: $PROJECT_ID"
-echo ""
+echo "Running API smoke test..." >&2
+echo "API URL: $API_BASE_URL" >&2
+echo "Project ID: $PROJECT_ID" >&2
+echo "" >&2
 
 # Generate unique name for this test run
 TEST_NAME="smoke-test-action-$(date +%s)"
 
+RESPONSE_FILE=$(mktemp)
+trap 'rm -f "$RESPONSE_FILE"' EXIT
+
 # =============================================================================
 # Step 1: Create an action
 # =============================================================================
-echo "Step 1: Creating test action..."
+echo "Step 1: Creating test action..." >&2
 
-CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_BASE_URL}/actions?projectId=${PROJECT_ID}" \
+HTTP_CODE=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST "${API_BASE_URL}/actions?projectId=${PROJECT_ID}" \
   -H "Authorization: Bearer ${API_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -71,12 +74,11 @@ CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_BASE_URL}/actions?p
     }
   }')
 
-HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
+RESPONSE_BODY=$(cat "$RESPONSE_FILE")
 
 if [ "$HTTP_CODE" != "201" ]; then
-    echo "❌ Failed to create action (HTTP $HTTP_CODE)"
-    echo "Response: $RESPONSE_BODY"
+    echo "❌ Failed to create action (HTTP $HTTP_CODE)" >&2
+    echo "Response: $RESPONSE_BODY" >&2
     show_logs_on_failure
     exit 1
 fi
@@ -84,29 +86,28 @@ fi
 ACTION_ID=$(echo "$RESPONSE_BODY" | jq -r '.data.actionId')
 
 if [ -z "$ACTION_ID" ] || [ "$ACTION_ID" = "null" ]; then
-    echo "❌ Failed to extract actionId from response"
-    echo "Response: $RESPONSE_BODY"
+    echo "❌ Failed to extract actionId from response" >&2
+    echo "Response: $RESPONSE_BODY" >&2
     show_logs_on_failure
     exit 1
 fi
 
-echo "✅ Created action: $ACTION_ID"
+echo "✅ Created action: $ACTION_ID" >&2
 
 # =============================================================================
 # Step 2: Fetch the action back
 # =============================================================================
-echo ""
-echo "Step 2: Fetching action..."
+echo "" >&2
+echo "Step 2: Fetching action..." >&2
 
-GET_RESPONSE=$(curl -s -w "\n%{http_code}" "${API_BASE_URL}/actions/${ACTION_ID}" \
+HTTP_CODE=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" "${API_BASE_URL}/actions/${ACTION_ID}" \
   -H "Authorization: Bearer ${API_KEY}")
 
-HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$GET_RESPONSE" | sed '$d')
+RESPONSE_BODY=$(cat "$RESPONSE_FILE")
 
 if [ "$HTTP_CODE" != "200" ]; then
-    echo "❌ Failed to fetch action (HTTP $HTTP_CODE)"
-    echo "Response: $RESPONSE_BODY"
+    echo "❌ Failed to fetch action (HTTP $HTTP_CODE)" >&2
+    echo "Response: $RESPONSE_BODY" >&2
     show_logs_on_failure
     exit 1
 fi
@@ -115,47 +116,46 @@ FETCHED_NAME=$(echo "$RESPONSE_BODY" | jq -r '.data.name')
 FETCHED_STATUS=$(echo "$RESPONSE_BODY" | jq -r '.data.status')
 
 if [ "$FETCHED_NAME" != "$TEST_NAME" ]; then
-    echo "❌ Action name mismatch"
-    echo "Expected: $TEST_NAME"
-    echo "Got: $FETCHED_NAME"
+    echo "❌ Action name mismatch" >&2
+    echo "Expected: $TEST_NAME" >&2
+    echo "Got: $FETCHED_NAME" >&2
     show_logs_on_failure
     exit 1
 fi
 
-echo "✅ Fetched action successfully"
-echo "   Name: $FETCHED_NAME"
-echo "   Status: $FETCHED_STATUS"
+echo "✅ Fetched action successfully" >&2
+echo "   Name: $FETCHED_NAME" >&2
+echo "   Status: $FETCHED_STATUS" >&2
 
 # =============================================================================
 # Step 3: Clean up - delete the action
 # =============================================================================
-echo ""
-echo "Step 3: Cleaning up (deleting action)..."
+echo "" >&2
+echo "Step 3: Cleaning up (deleting action)..." >&2
 
-DELETE_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "${API_BASE_URL}/actions/${ACTION_ID}" \
+HTTP_CODE=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X DELETE "${API_BASE_URL}/actions/${ACTION_ID}" \
   -H "Authorization: Bearer ${API_KEY}")
 
-HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$DELETE_RESPONSE" | sed '$d')
+RESPONSE_BODY=$(cat "$RESPONSE_FILE")
 
 if [ "$HTTP_CODE" != "200" ]; then
-    echo "⚠️  Warning: Failed to delete action (HTTP $HTTP_CODE)"
-    echo "Response: $RESPONSE_BODY"
+    echo "⚠️  Warning: Failed to delete action (HTTP $HTTP_CODE)" >&2
+    echo "Response: $RESPONSE_BODY" >&2
     # Don't fail the test for cleanup issues
 else
-    echo "✅ Action deleted (archived)"
+    echo "✅ Action deleted (archived)" >&2
 fi
 
 # =============================================================================
 # Summary
 # =============================================================================
-echo ""
-echo "=========================================="
-echo "✅ API smoke test passed!"
-echo "=========================================="
-echo ""
-echo "Verified:"
-echo "  - POST /actions (create)"
-echo "  - GET /actions/{actionId} (read)"
-echo "  - DELETE /actions/{actionId} (delete)"
-echo ""
+echo "" >&2
+echo "==========================================" >&2
+echo "✅ API smoke test passed!" >&2
+echo "==========================================" >&2
+echo "" >&2
+echo "Verified:" >&2
+echo "  - POST /actions (create)" >&2
+echo "  - GET /actions/{actionId} (read)" >&2
+echo "  - DELETE /actions/{actionId} (delete)" >&2
+echo "" >&2
