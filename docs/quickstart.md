@@ -30,7 +30,7 @@ The interactive setup wizard will guide you through configuration:
 
 This will:
 1. Ask you to select a configuration profile
-2. Generate the appropriate `docker-compose.yml`
+2. Symlink the appropriate `docker-compose.yml`
 3. Create a `.env` file with auto-generated secrets
 
 ### Option B: Manual Setup
@@ -45,11 +45,11 @@ Then edit `.env` to fill in the required secrets. See [Configuration Reference](
 
 ### Configuration Profiles
 
-| Profile | Services Included | Use Case |
-|---------|-------------------|----------|
-| `full` | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
-| `database` | Redis, MongoDB, ClickHouse | Using external S3-compatible storage |
-| `cache` | Redis | Using external MongoDB, ClickHouse, and S3 |
+| Profile | File | Services Included | Use Case |
+|---------|------|-------------------|----------|
+| `full` | `docker-compose.full.yml` | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
+| `database` | `docker-compose.database.yml` | Redis, MongoDB, ClickHouse | Using external S3-compatible storage |
+| `cache` | `docker-compose.cache.yml` | Redis | Using external MongoDB, ClickHouse, and S3 |
 
 ## Step 3: Configure Environment
 

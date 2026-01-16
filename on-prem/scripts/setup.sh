@@ -156,7 +156,7 @@ echo "║           Currents On-Prem Setup                          ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo "This script will help you generate a docker-compose configuration"
+echo "This script will help you choose a docker-compose configuration"
 echo "based on which services you want to run locally vs externally."
 echo ""
 
@@ -235,13 +235,6 @@ case $choice in
         exit 1
         ;;
 esac
-
-# Generate the compose file (unless custom already did it)
-if [ "$choice" != "4" ]; then
-    echo ""
-    echo "Generating docker-compose.$PROFILE.yml..."
-    "$SCRIPT_DIR/generate-compose.sh" $PROFILE
-fi
 
 # Update symlink
 COMPOSE_FILE="docker-compose.${PROFILE}.yml"
