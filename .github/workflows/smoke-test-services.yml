@@ -43,106 +43,134 @@ jobs:
         working-directory: on-prem
         run: ./scripts/setup.sh --env-only --force
 
+      # ==========================================================================
+      # Start services
+      # ==========================================================================
       - name: Start infrastructure services
         working-directory: on-prem
-        run: |
-          echo "Starting Redis, MongoDB, and MongoDB init..."
-          docker compose -f docker-compose.full.yml up -d redis mongodb
-          echo "Waiting for services to initialize..."
+        run: docker compose -f docker-compose.full.yml up -d redis mongodb
 
       - name: Wait for Redis
         working-directory: on-prem
-        run: |
-          echo "Waiting for Redis to be ready..."
-          for i in {1..30}; do
-            if docker compose -f docker-compose.full.yml exec -T redis redis-cli ping | grep -q PONG; then
-              echo "✅ Redis is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30 - Redis not ready yet..."
-            sleep 2
-          done
-          echo "❌ Redis failed to start"
-          docker compose -f docker-compose.full.yml logs redis
-          exit 1
+        run: ./scripts/smoke-test/wait-for-redis.sh
 
       - name: Wait for MongoDB
         working-directory: on-prem
-        run: |
-          echo "Waiting for MongoDB to be healthy..."
-          for i in {1..60}; do
-            if docker compose -f docker-compose.full.yml exec -T mongodb mongosh --quiet --eval "db.runCommand('ping').ok" localhost:27017 2>/dev/null | grep -q 1; then
-              echo "✅ MongoDB is ready"
-              exit 0
-            fi
-            echo "Attempt $i/60 - MongoDB not ready yet..."
-            sleep 2
-          done
-          echo "❌ MongoDB failed to start"
-          docker compose -f docker-compose.full.yml logs mongodb
-          exit 1
+        run: ./scripts/smoke-test/wait-for-mongodb.sh
 
       - name: Start application services
         working-directory: on-prem
-        run: |
-          echo "Starting Scheduler and API..."
-          docker compose -f docker-compose.full.yml up -d scheduler api
-          echo "Waiting for services to initialize..."
+        run: docker compose -f docker-compose.full.yml up -d scheduler api
 
       - name: Wait for API
         working-directory: on-prem
-        run: |
-          echo "Waiting for API to be ready..."
-          for i in {1..60}; do
-            if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
-              echo "✅ API is ready"
-              exit 0
-            fi
-            echo "Attempt $i/60 - API not ready yet..."
-            sleep 2
-          done
-          echo "❌ API failed to start"
-          docker compose -f docker-compose.full.yml logs api
-          exit 1
+        run: ./scripts/smoke-test/wait-for-api.sh
 
       - name: Wait for root user
         working-directory: on-prem
-        run: |
-          source .env
-          echo "Waiting for root user to be created..."
-          for i in {1..30}; do
-            if docker compose -f docker-compose.full.yml exec -T mongodb mongosh \
-              -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
-              --quiet --eval "db.getSiblingDB('currents').user.findOne({email: '${ON_PREM_EMAIL:-root@currents.local}'})" 2>/dev/null | grep -q "_id"; then
-              echo "✅ Root user exists"
-              exit 0
-            fi
-            echo "Attempt $i/30 - Root user not created yet..."
-            sleep 2
-          done
-          echo "❌ Root user was not created"
-          docker compose -f docker-compose.full.yml logs api scheduler
-          exit 1
+        run: ./scripts/smoke-test/wait-for-root-user.sh
 
       - name: Seed database
         id: seed
         working-directory: on-prem
         run: |
           echo "Seeding database with test data..."
-          # Capture the KEY=VALUE output from seed script
           eval $(./scripts/smoke-test/seed-database.sh)
-          # Export to GitHub Actions output
           echo "api_key=${API_KEY}" >> $GITHUB_OUTPUT
           echo "project_id=${PROJECT_ID}" >> $GITHUB_OUTPUT
 
-      - name: Run API smoke test
+      # ==========================================================================
+      # API Tests - Part 1: Create and Fetch
+      # ==========================================================================
+      - name: "API Test: Create action"
+        id: create_action
         working-directory: on-prem
         run: |
-          echo "Running API smoke test..."
-          ./scripts/smoke-test/api-test.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.seed.outputs.project_id }}"
+          eval $(./scripts/smoke-test/api-test-create.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.seed.outputs.project_id }}")
+          echo "action_id=${ACTION_ID}" >> $GITHUB_OUTPUT
+          echo "test_name=${TEST_NAME}" >> $GITHUB_OUTPUT
+
+      - name: "API Test: Fetch action"
+        working-directory: on-prem
+        run: ./scripts/smoke-test/api-test-fetch.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.create_action.outputs.action_id }}" "${{ steps.create_action.outputs.test_name }}"
+
+      # ==========================================================================
+      # Backup/Restore Test
+      # ==========================================================================
+      - name: Create MongoDB backup
+        working-directory: on-prem
+        run: |
+          source .env
+          echo "Creating MongoDB backup..."
+          docker compose -f docker-compose.full.yml exec -T mongodb mongodump \
+            -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
+            --archive=/data/db/backup.archive
+          docker compose -f docker-compose.full.yml cp mongodb:/data/db/backup.archive ./mongodb-backup.archive
+          echo "✅ Backup created"
+
+      - name: Stop services and destroy data
+        working-directory: on-prem
+        run: |
+          docker compose -f docker-compose.full.yml down -v --remove-orphans
+          rm -rf data/mongodb data/redis data/startup
+          echo "✅ Data destroyed"
+
+      - name: Restart infrastructure services
+        working-directory: on-prem
+        run: |
+          mkdir -p data/mongodb data/redis data/startup
+          docker compose -f docker-compose.full.yml up -d redis mongodb
+
+      - name: Wait for MongoDB (after restart)
+        working-directory: on-prem
+        run: ./scripts/smoke-test/wait-for-mongodb.sh
+
+      - name: Restore MongoDB backup
+        working-directory: on-prem
+        run: |
+          source .env
+          echo "Restoring MongoDB backup..."
+          docker compose -f docker-compose.full.yml cp ./mongodb-backup.archive mongodb:/data/db/backup.archive
+          docker compose -f docker-compose.full.yml exec -T mongodb mongorestore \
+            -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
+            --archive=/data/db/backup.archive --drop
+          docker compose -f docker-compose.full.yml exec -T mongodb rm /data/db/backup.archive
+          echo "✅ Backup restored"
+
+      - name: Restart application services
+        working-directory: on-prem
+        run: docker compose -f docker-compose.full.yml up -d scheduler api
+
+      - name: Wait for API (after restore)
+        working-directory: on-prem
+        run: ./scripts/smoke-test/wait-for-api.sh
+
+      # ==========================================================================
+      # API Tests - Part 2: Verify restore and cleanup
+      # ==========================================================================
+      - name: "API Test: Fetch action (after restore)"
+        working-directory: on-prem
+        run: ./scripts/smoke-test/api-test-fetch.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.create_action.outputs.action_id }}" "${{ steps.create_action.outputs.test_name }}"
+
+      - name: "API Test: Delete action"
+        working-directory: on-prem
+        run: ./scripts/smoke-test/api-test-delete.sh "${{ steps.seed.outputs.api_key }}" "${{ steps.create_action.outputs.action_id }}"
+
+      - name: Test summary
+        run: |
+          echo "=========================================="
+          echo "✅ All tests passed!"
+          echo "=========================================="
+          echo "Verified:"
+          echo "  - POST /actions (create)"
+          echo "  - GET /actions (read)"
+          echo "  - MongoDB backup/restore"
+          echo "  - GET /actions (read after restore)"
+          echo "  - DELETE /actions (delete)"
 
       - name: Cleanup
         if: always()
         working-directory: on-prem
         run: |
           docker compose -f docker-compose.full.yml down -v --remove-orphans
+          rm -f mongodb-backup.archive
