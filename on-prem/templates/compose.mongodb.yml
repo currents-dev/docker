@@ -21,6 +21,25 @@ services:
         chmod 400 "$$KEYFILE"
         chown mongodb:mongodb "$$KEYFILE"
         
+        # Create healthcheck script (reads credentials from env at runtime)
+        cat > /healthcheck.sh << 'HEALTHCHECK'
+        #!/bin/bash
+        mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" \
+          --authenticationDatabase admin --quiet --eval "
+          try {
+            const status = rs.status();
+            if (status.myState === 1) { quit(0); }
+            quit(1);
+          } catch (err) {
+            if (err.codeName === 'NotYetInitialized') {
+              rs.initiate({_id:'rs0', members:[{_id:0, host:'mongodb:27017'}]});
+            }
+            quit(1);
+          }
+        "
+        HEALTHCHECK
+        chmod +x /healthcheck.sh
+        
         # Call original Docker entrypoint (handles MONGO_INITDB_* user creation)
         exec docker-entrypoint.sh mongod --bind_ip_all --replSet rs0 --auth --keyFile "$$KEYFILE"
     environment:
@@ -29,41 +48,13 @@ services:
     networks:
       - default
     healthcheck:
-      test:
-        - 'CMD-SHELL'
-        - mongosh --quiet --eval "db.runCommand('ping').ok" localhost:27017
+      test: ['CMD', '/healthcheck.sh']
       interval: 5s
-      timeout: 5s
-      retries: 10
+      timeout: 10s
+      retries: 30
       start_period: 10s
     volumes:
       - ${DC_MONGODB_VOLUME:-./data/mongodb}:/data/db
-
-  mongodb-init:
-    image: ${DC_MONGODB_IMAGE:-mongo:8.2.3}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
-    networks:
-      - default
-    entrypoint:
-      - bash
-      - -c
-      - |
-        echo 'Initializing MongoDB replica set...'
-        mongosh mongodb:27017 -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --quiet --eval "
-          try {
-            rs.status();
-            print('Replica set already initialized');
-          } catch (err) {
-            rs.initiate({_id:'rs0', members:[{_id:0, host:'mongodb:27017'}]});
-            print('Replica set initialized');
-          }
-        "
-        echo 'MongoDB initialization complete'
 
   # Currents services depend on mongodb
   director:

@@ -12,8 +12,8 @@ This guide walks you through setting up Currents on-premises using Docker Compos
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/currents-dev/currents-dev-docker.git
-cd currents-dev-docker/on-prem
+git clone https://github.com/currents-dev/docker.git currents-docker
+cd currents-docker/on-prem
 ```
 
 ## Step 2: Create Environment File
@@ -188,8 +188,10 @@ CURRENTS_RECORD_API_URL=https://currents-record.example.com
 ### Using the Included Traefik Profile
 
 1. Place your wildcard certificate files in `data/traefik/certs/`:
-   - `wildcard.crt` - Certificate file
+   - `wildcard.crt` - **Fullchain** certificate file (server cert + intermediate certs concatenated)
    - `wildcard.key` - Private key file
+
+   > **Important:** The `wildcard.crt` must be a fullchain certificate containing your server certificate followed by intermediate certificate(s). Without the full chain, clients will fail with "unable to verify certificate" errors. You can create it by concatenating: `cat server.crt intermediate.crt > wildcard.crt`
 
 2. Configure your domain in `.env`:
    ```bash
@@ -271,6 +273,122 @@ If ports are already in use, customize them in `.env`:
 DC_API_PORT=4001
 DC_DIRECTOR_PORT=1235
 ```
+
+### Podman: Permission Denied Errors
+
+If you're using Podman and see permission errors like:
+```
+mongodb-1  | chown: changing ownership of '/data/db': Permission denied
+mongodb-1  | bash: /data/db/replica.key: Permission denied
+```
+
+This is due to Podman's rootless mode and UID mapping. Follow these steps:
+
+#### Step 1: Create Data Directories
+
+Create the data directories manually before starting services:
+
+```bash
+mkdir -p data/mongodb data/redis data/clickhouse data/rustfs data/startup data/traefik/certs data/traefik/config
+```
+
+#### Step 2: Set Permissions
+
+Set ownership to match container UIDs:
+
+For **rootless Podman** (running as a regular user):
+```bash
+# MongoDB runs as uid 999
+podman unshare chown -R 999:999 data/mongodb
+
+# ClickHouse runs as uid 101
+podman unshare chown -R 101:101 data/clickhouse
+
+# Redis runs as uid 999
+podman unshare chown -R 999:999 data/redis
+
+# RustFS runs as uid 10001 (if using local object storage)
+podman unshare chown -R 10001:10001 data/rustfs
+
+# Scheduler runs as uid 1000
+podman unshare chown -R 1000:1000 data/startup
+
+# Traefik runs as root (uid 0) - no chown needed, just create dirs
+```
+
+For **rootful Podman** (running as root or with sudo):
+```bash
+# MongoDB runs as uid 999
+sudo chown -R 999:999 data/mongodb
+
+# ClickHouse runs as uid 101
+sudo chown -R 101:101 data/clickhouse
+
+# Redis runs as uid 999
+sudo chown -R 999:999 data/redis
+
+# RustFS runs as uid 10001 (if using local object storage)
+sudo chown -R 10001:10001 data/rustfs
+
+# Scheduler runs as uid 1000
+sudo chown -R 1000:1000 data/startup
+
+# Traefik runs as root (uid 0) - no chown needed
+```
+
+> **Tip:** To check if you're running rootless Podman, run `podman info --format '{{.Host.Security.Rootless}}'`. If it returns `true`, use `podman unshare`; otherwise use `sudo chown`.
+
+#### Step 3: SELinux (RHEL/CentOS/Fedora)
+
+If SELinux is enabled, you need to relabel the data directories so containers can access them:
+
+```bash
+# Relabel data directories for container access
+sudo chcon -Rt svirt_sandbox_file_t data/
+```
+
+Or for each directory individually:
+```bash
+sudo chcon -Rt svirt_sandbox_file_t data/mongodb
+sudo chcon -Rt svirt_sandbox_file_t data/redis
+sudo chcon -Rt svirt_sandbox_file_t data/clickhouse
+sudo chcon -Rt svirt_sandbox_file_t data/rustfs
+sudo chcon -Rt svirt_sandbox_file_t data/startup
+sudo chcon -Rt svirt_sandbox_file_t data/traefik
+```
+
+To verify the labels are set correctly:
+```bash
+ls -lZ data/
+```
+
+You should see `svirt_sandbox_file_t` in the output.
+
+#### Alternative: Use Named Volumes
+
+Named volumes avoid permission issues entirely since Podman manages them:
+
+```bash
+# Create named volumes
+podman volume create mongodb-data
+podman volume create redis-data
+podman volume create clickhouse-data
+podman volume create rustfs-data
+podman volume create scheduler-startup
+podman volume create traefik-certs
+podman volume create traefik-config
+
+# Configure in .env
+DC_MONGODB_VOLUME=mongodb-data
+DC_REDIS_VOLUME=redis-data
+DC_CLICKHOUSE_VOLUME=clickhouse-data
+DC_RUSTFS_VOLUME=rustfs-data
+DC_SCHEDULER_STARTUP_VOLUME=scheduler-startup
+DC_TRAEFIK_CERTS_DIR=traefik-certs
+DC_TRAEFIK_CONFIG_DIR=traefik-config
+```
+
+> **Note:** Named volumes are stored in Podman's volume directory (typically `~/.local/share/containers/storage/volumes/`) rather than the current directory.
 
 ## Advanced: Port Binding Configuration
 
