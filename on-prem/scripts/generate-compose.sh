@@ -31,8 +31,8 @@ elif command -v docker &> /dev/null; then
     YQ_CMD="docker run --rm -v \"$TEMPLATES_DIR:/templates:ro\" mikefarah/yq:4"
     echo "Note: Using Docker with mikefarah/yq:4 image (yq not found locally)"
 elif command -v podman &> /dev/null; then
-    # Use podman with yq image
-    YQ_CMD="podman run --rm -v \"$TEMPLATES_DIR:/templates:ro\" mikefarah/yq:4"
+    # Use podman with yq image (:Z for SELinux relabeling)
+    YQ_CMD="podman run --rm -v \"$TEMPLATES_DIR:/templates:ro,Z\" mikefarah/yq:4"
     echo "Note: Using Podman with mikefarah/yq:4 image (yq not found locally)"
 else
     echo "Error: yq is required but not installed, and neither docker nor podman are available."
