@@ -219,11 +219,18 @@ services:
         chmod 400 "$$KEYFILE"
         chown mongodb:mongodb "$$KEYFILE"
 
-        # Create healthcheck script (reads credentials from env at runtime)
-        cat > /healthcheck.sh << 'HEALTHCHECK'
-        #!/bin/bash
-        mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" \
-          --authenticationDatabase admin --quiet --eval "
+        # Call original Docker entrypoint (handles MONGO_INITDB_* user creation)
+        exec docker-entrypoint.sh mongod --bind_ip_all --replSet rs0 --auth --keyFile "$$KEYFILE"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    networks:
+      - default
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          mongosh -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --quiet --eval "
           try {
             const status = rs.status();
             if (status.myState === 1) { quit(0); }
@@ -233,20 +240,7 @@ services:
               rs.initiate({_id:'rs0', members:[{_id:0, host:'mongodb:27017'}]});
             }
             quit(1);
-          }
-        "
-        HEALTHCHECK
-        chmod +x /healthcheck.sh
-
-        # Call original Docker entrypoint (handles MONGO_INITDB_* user creation)
-        exec docker-entrypoint.sh mongod --bind_ip_all --replSet rs0 --auth --keyFile "$$KEYFILE"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
-    networks:
-      - default
-    healthcheck:
-      test: ['CMD', '/healthcheck.sh']
+          }"
       interval: 5s
       timeout: 10s
       retries: 30
