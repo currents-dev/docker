@@ -32,7 +32,7 @@ Releases are tied to Currents container image tags, which use date-based version
 
 ### Release Process
 
-1. **Update the image tag** in `on-prem/.env.example`:
+1. **Update the version** in `on-prem/VERSION` and the image tag in `on-prem/.env.example`:
 
 2. **Update the changelog** in `on-prem/CHANGELOG.md`:
    - Move items from "Unreleased" to a new version section
@@ -40,7 +40,7 @@ Releases are tied to Currents container image tags, which use date-based version
 
 3. **Commit the release**:
    ```bash
-   git add on-prem/.env.example on-prem/CHANGELOG.md
+   git add on-prem/VERSION on-prem/.env.example on-prem/CHANGELOG.md
    git commit -m "release: on-prem 2026-01-14-001"
    ```
 

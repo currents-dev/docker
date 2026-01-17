@@ -11,6 +11,7 @@ The Docker Compose configuration is modular, allowing you to choose which data s
 - [🚀 Quickstart Guide](./quickstart.md)
 - [Container Image Access](./container-images.md)
 - [Configuration Reference](./configuration.md)
+- [Upgrading Currents On-Prem](./upgrading.md)
 - [Support Policy](./support.md)
 
 ## Additional Resources

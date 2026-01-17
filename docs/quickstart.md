@@ -266,6 +266,23 @@ docker compose logs mongodb
 
 The replica set initialization runs automatically on first start.
 
+If you see connection errors in service logs (e.g., "connection refused", "ECONNREFUSED", database connection failures), this is often due to timing issues with dependencies starting. Try restarting the service that's logging the error:
+
+```bash
+# Restart the specific service
+docker compose restart <service-name>
+
+# Or restart all services
+docker compose restart
+```
+
+For example, if the `api` service shows MongoDB connection errors, restart it:
+```bash
+docker compose restart api
+```
+
+The service will retry connecting to its dependencies once they're fully ready.
+
 ### Port Conflicts
 
 If ports are already in use, customize them in `.env`:

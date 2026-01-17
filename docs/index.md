@@ -10,6 +10,7 @@ Docker Compose configuration for self-hosted Currents deployment.
 
 - [Quickstart Guide](quickstart.md) — Get up and running with Docker Compose
 - [Configuration Reference](configuration.md) — All environment variables and settings
+- [Upgrading Currents On-Prem](upgrading.md) — Upgrade workflows and version management
 - [Support Policy](support.md) — What's supported and maintenance responsibilities
 
 ## Quick Setup
