@@ -488,5 +488,6 @@ DC_CLICKHOUSE_VOLUME=clickhouse-data
 ## Next Steps
 
 - Review the [Configuration Reference](./configuration.md) for all available options
+- Configure [Logging for Production](./logging.md) to ensure proper log management
 - Read the [Support Policy](./support.md) to understand support boundaries
 - Set up monitoring and backups for production use

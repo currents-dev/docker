@@ -45,7 +45,7 @@ These have defaults but you'll likely want to customize them.
 | `MONGODB_USERNAME` | string | `currents-user` | MongoDB username |
 | `MONGODB_DATABASE` | string | `currents` | MongoDB database name |
 | `MONGODB_URI` | string | _(derived)_ | Full MongoDB connection string |
-| `TRAEFIK_DOMAIN` | string | _(commented)_ | Base domain for Traefik TLS routing |
+| `TRAEFIK_DOMAIN` | string | `localhost` | Base domain for Traefik TLS routing |
 | `TRAEFIK_API_SUBDOMAIN` | string | `currents-app` | Subdomain for API/Dashboard |
 | `TRAEFIK_DIRECTOR_SUBDOMAIN` | string | `currents-record` | Subdomain for Director |
 | `TRAEFIK_STORAGE_SUBDOMAIN` | string | `currents-storage` | Subdomain for RustFS S3 API |

@@ -316,7 +316,7 @@ configs:
         routers:
           # API / Dashboard service
           api:
-            rule: "Host(`${TRAEFIK_API_SUBDOMAIN:-currents-app}.${TRAEFIK_DOMAIN}`)"
+            rule: "Host(`${TRAEFIK_API_SUBDOMAIN:-currents-app}.${TRAEFIK_DOMAIN:-localhost}`)"
             service: api
             entryPoints:
               - websecure
@@ -324,7 +324,7 @@ configs:
 
           # Director service (record API)
           director:
-            rule: "Host(`${TRAEFIK_DIRECTOR_SUBDOMAIN:-currents-record}.${TRAEFIK_DOMAIN}`)"
+            rule: "Host(`${TRAEFIK_DIRECTOR_SUBDOMAIN:-currents-record}.${TRAEFIK_DOMAIN:-localhost}`)"
             service: director
             entryPoints:
               - websecure
@@ -333,7 +333,7 @@ configs:
           {{- if eq (env "TRAEFIK_ENABLE_STORAGE") "true" }}
           # RustFS S3 API (conditionally enabled)
           storage:
-            rule: "Host(`${TRAEFIK_STORAGE_SUBDOMAIN:-currents-storage}.${TRAEFIK_DOMAIN}`)"
+            rule: "Host(`${TRAEFIK_STORAGE_SUBDOMAIN:-currents-storage}.${TRAEFIK_DOMAIN:-localhost}`)"
             service: rustfs
             entryPoints:
               - websecure

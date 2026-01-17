@@ -33,7 +33,6 @@ jobs:
           cat > .env << 'EOF'
           # Minimal env file for docker compose config validation
           CLICKHOUSE_CURRENTS_PASSWORD=placeholder
-          TRAEFIK_DOMAIN=example.com
           EOF
 
       - name: Validate docker-compose.full.yml
@@ -85,7 +84,6 @@ jobs:
           cat > .env << 'EOF'
           # Minimal env file for podman compose config validation
           CLICKHOUSE_CURRENTS_PASSWORD=placeholder
-          TRAEFIK_DOMAIN=example.com
           EOF
 
       - name: Validate docker-compose.full.yml
