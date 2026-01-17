@@ -10,7 +10,8 @@ Docker Compose configuration for self-hosted Currents deployment.
 
 - [Quickstart Guide](quickstart.md) — Get up and running with Docker Compose
 - [Configuration Reference](configuration.md) — All environment variables and settings
-- [Backup and Restore](./backup-restore.md)
+- [Logging Configuration](logging.md) — Configure container logging for production
+- [Backup and Restore](backup-restore.md) — Backup and restore procedures
 - [Support Policy](support.md) — What's supported and maintenance responsibilities
 
 ## Quick Setup
