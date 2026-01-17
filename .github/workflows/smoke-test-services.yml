@@ -112,7 +112,7 @@ jobs:
         working-directory: on-prem
         run: |
           docker compose -f docker-compose.full.yml down -v --remove-orphans
-          rm -rf data/mongodb data/redis data/startup
+          sudo rm -rf data/mongodb data/redis data/startup
           echo "✅ Data destroyed"
 
       - name: Restart infrastructure services
