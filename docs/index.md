@@ -12,6 +12,7 @@ Docker Compose configuration for self-hosted Currents deployment.
 - [Configuration Reference](configuration.md) — All environment variables and settings
 - [Logging Configuration](logging.md) — Configure container logging for production
 - [Backup and Restore](backup-restore.md) — Backup and restore procedures
+- [Upgrading Currents On-Prem](upgrading.md) — Upgrade workflows and version management
 - [Support Policy](support.md) — What's supported and maintenance responsibilities
 
 ## Quick Setup
