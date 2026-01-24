@@ -122,9 +122,21 @@ SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASS=your-smtp-password
 
-# From address for automated emails
-AUTOMATED_REPORTS_EMAIL_FROM=Currents Report <reports@example.com>
+# From addresses for outgoing emails
+AUTOMATED_REPORTS_EMAIL_FROM="Currents Report <reports@yourdomain.com>"
+INVITE_EMAIL_FROM="Currents App <no-reply@yourdomain.com>"
 ```
+
+> ⚠️ **Important: FROM Address Configuration**
+>
+> You **must** change the FROM addresses to use a domain your SMTP provider is authorized to send from. The format is `"Display Name <email@domain.com>"`.
+>
+> If you leave the default `example.com` addresses, emails will be rejected with DMARC errors:
+> ```
+> 5.7.26 Unauthenticated email from example.com is not accepted due to domain's DMARC policy
+> ```
+>
+> **For testing:** If using a sandbox (e.g., Mailgun sandbox), use your sandbox domain like `no-reply@sandboxXXXXX.mailgun.org`. Emails may land in spam, but they will be delivered.
 
 > **Note:** `SMTP_SECURE=false` uses STARTTLS (explicit TLS) which starts unencrypted then upgrades to TLS—this is the standard for port 587 and recommended for most providers. Set `SMTP_SECURE=true` for implicit TLS connections (port 465), which establish TLS immediately without upgrading.
 
