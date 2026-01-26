@@ -130,7 +130,7 @@ docker compose start
 
 Before restoring, ensure you have:
 - Your backed up `.env` file (or recreate with the same credentials)
-- Your `docker-compose.yml` file (or clone the repository and run setup)
+- Your `docker-compose.yml` file (or [clone the repository](https://github.com/currents-dev/docker) and run setup)
 
 ### Full Restore
 

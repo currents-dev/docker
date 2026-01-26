@@ -22,6 +22,8 @@ cd on-prem
 docker compose up -d
 ```
 
+> For Kubernetes deployments and scaled production environments, we recommend using the [Currents Helm Chart](https://currents-dev.github.io/helm-charts/docs/) instead.
+
 ## Development
 
 - [On-Prem Development Guide](on-prem/README.md) — Architecture, scripts, and contribution guidelines

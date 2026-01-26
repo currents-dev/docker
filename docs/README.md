@@ -6,6 +6,8 @@ Currents on-premise installation using Docker Compose provides a containerized d
 
 The Docker Compose configuration is modular, allowing you to choose which data services to run locally versus connecting to external managed services.
 
+> For Kubernetes deployments and scaled production environments, see the [Currents Helm Chart](https://currents-dev.github.io/helm-charts/docs/) documentation.
+
 ## Resources
 
 - [🚀 Quickstart Guide](./quickstart.md)
