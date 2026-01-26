@@ -58,6 +58,43 @@ while IFS= read -r line || [ -n "$line" ]; do
     fi
 done < "$EXAMPLE_FILE"
 
+# =============================================================================
+# Check for corrupted values (e.g., line wrapping from terminal editors)
+# =============================================================================
+CORRUPTED=()
+
+# Check MONGODB_URI for spaces (indicates line wrapping corruption)
+if grep -q "^MONGODB_URI=" "$ENV_FILE"; then
+    mongodb_uri=$(grep "^MONGODB_URI=" "$ENV_FILE" | cut -d'=' -f2-)
+    if [[ "$mongodb_uri" =~ [[:space:]] ]]; then
+        CORRUPTED+=("MONGODB_URI contains spaces - likely corrupted by editor line wrapping")
+    fi
+    # Check if it looks like it was split across lines (missing expected parts)
+    if [[ ! "$mongodb_uri" =~ ^mongodb(\+srv)?:\/\/ ]] || [[ ! "$mongodb_uri" =~ "@" ]]; then
+        CORRUPTED+=("MONGODB_URI appears incomplete - may have been split by line wrapping")
+    fi
+fi
+
+# Check for orphan lines that look like continuation of MONGODB_URI
+if grep -qE "^(authSource|replicaSet|mongodb:|27017)" "$ENV_FILE"; then
+    CORRUPTED+=("Found orphan lines that may be fragments of a wrapped MONGODB_URI")
+fi
+
+if [ ${#CORRUPTED[@]} -gt 0 ]; then
+    echo -e "${RED}Corrupted values detected:${NC}"
+    for msg in "${CORRUPTED[@]}"; do
+        echo -e "  ${RED}!${NC} $msg"
+    done
+    echo ""
+    echo -e "${YELLOW}This usually happens when editing .env with a terminal editor that wraps long lines.${NC}"
+    echo "To fix:"
+    echo "  1. Delete the corrupted lines from .env"
+    echo "  2. Re-edit using: nano -w .env  (the -w flag disables line wrapping)"
+    echo "  3. Or copy the original from .env.example: grep 'MONGODB_URI' .env.example"
+    echo ""
+    exit 1
+fi
+
 if [ ${#MISSING[@]} -eq 0 ] && [ ${#COMMENTED[@]} -eq 0 ]; then
     echo -e "${GREEN}All environment variables are present in .env${NC}"
     exit 0
