@@ -1,20 +1,16 @@
-# Currents.dev Docker
+# Currents.dev - Docker Compose Self Hosted Setup
 
-Docker configurations for running Currents services.
+Set up Currents in self-hosted environments using Docker Compose.
 
-## Repository Structure
+- [Docker Compose Setup](https://currents-dev.github.io/docker)
+- [Docker Compose Configuration Reference](https://currents-dev.github.io/docker/configuration.html)
+- [AWS IAM User Setup](https://currents-dev.github.io/helm-charts/docs/eks/iam.html)
 
-```
-├── docs/             # User documentation (published to GitHub Pages)
-├── on-prem/          # Self-hosted deployment using Docker Compose
-│   ├── scripts/      # Setup and generation scripts
-│   └── templates/    # Modular compose templates
-└── (future tools)    # Additional Docker configurations may be added here
-```
+⚠️ Important! You must be authenticated as an AWS IAM user to pull images from Current’s Private AWS ECR repositories. Contact [Currents team](mailto:support@currents.dev) with your AWS IAM user details to request access.
 
-## On-Premises
+<small>Looking for Kubernetes deployment? See [Currents K8S Setup](https://currents-dev.github.io/helm-charts/docs/).</small>
 
-For self-hosted Currents deployment, see the [On-Prem documentation](https://currents-dev.github.io/docker/).
+## Quckstart
 
 ```bash
 cd on-prem
@@ -22,11 +18,9 @@ cd on-prem
 docker compose up -d
 ```
 
-> For Kubernetes deployments and scaled production environments, we recommend using the [Currents Helm Chart](https://currents-dev.github.io/helm-charts/docs/) instead.
-
 ## Development
 
-- [On-Prem Development Guide](on-prem/README.md) — Architecture, scripts, and contribution guidelines
+See [Docker Compose Development Guide](on-prem/README.md) — architecture, scripts, and contribution guidelines.
 
 ## Releasing (On-Prem)
 
@@ -34,37 +28,44 @@ Releases are tied to Currents container image tags, which use date-based version
 
 ### Release Process
 
-1. **Update the version** in `on-prem/VERSION` and the image tag in `on-prem/.env.example`:
+#### 1. Update the version
 
-2. **Update the changelog** in `on-prem/CHANGELOG.md`:
-   - Move items from "Unreleased" to a new version section
-   - Add release date and summary of changes
+Edit `on-prem/VERSION` and `on-prem/.env.example` with the image tag.
 
-3. **Commit the release**:
-   ```bash
-   git add on-prem/VERSION on-prem/.env.example on-prem/CHANGELOG.md
-   git commit -m "release: on-prem 2026-01-14-001"
-   ```
+#### 2. **Update the changelog** in `on-prem/CHANGELOG.md`
 
-4. **Create a git tag** (namespaced for on-prem):
-   ```bash
-   git tag on-prem/2026-01-14-001
-   ```
+- Move items from "Unreleased" to a new version section
+- Add release date and summary of changes
 
-5. **Push**:
-   ```bash
-   git push && git push --tags
-   ```
+#### 3. Commit the release
+
+```bash
+git add on-prem/VERSION on-prem/.env.example on-prem/CHANGELOG.md
+git commit -m "release: on-prem 2026-01-14-001"
+```
+
+#### 4. Create a git tag (namespaced for on-prem)
+
+```bash
+git tag on-prem/2026-01-14-001
+```
+
+#### 5. Push
+
+```bash
+git push && git push --tags
+```
 
 ### Tag Format
 
 Tags are namespaced by tool to allow for future additions:
 
-| Tool | Tag Format | Example |
-|------|------------|---------|
+| Tool    | Tag Format               | Example                  |
+| ------- | ------------------------ | ------------------------ |
 | On-Prem | `on-prem/YYYY-MM-DD-NNN` | `on-prem/2026-01-14-001` |
 
 List all on-prem releases:
+
 ```bash
 git tag -l 'on-prem/*'
 ```
