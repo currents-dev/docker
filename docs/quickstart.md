@@ -11,10 +11,14 @@ This guide walks you through setting up Currents on-premises using Docker Compos
 
 ## Step 1: Clone the Repository
 
+Clone the [currents-dev/docker repository](https://github.com/currents-dev/docker):
+
 ```bash
 git clone https://github.com/currents-dev/docker.git currents-docker
 cd currents-docker/on-prem
 ```
+
+> **Tip:** You can [browse the repository on GitHub](https://github.com/currents-dev/docker/tree/main/on-prem) to explore the configuration files before cloning.
 
 ## Step 2: Create Environment File
 
@@ -41,15 +45,15 @@ If you prefer to configure manually:
 cp .env.example .env
 ```
 
-Then edit `.env` to fill in the required secrets. See [Configuration Reference](./configuration.md) for generation commands.
+Then edit `.env` to fill in the required secrets. See the [`.env.example` file](https://github.com/currents-dev/docker/blob/main/on-prem/.env.example) for all available variables and [Configuration Reference](./configuration.md) for generation commands.
 
 ### Configuration Profiles
 
 | Profile | File | Services Included | Use Case |
 |---------|------|-------------------|----------|
-| `full` | `docker-compose.full.yml` | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
-| `database` | `docker-compose.database.yml` | Redis, MongoDB, ClickHouse | Using external S3-compatible storage |
-| `cache` | `docker-compose.cache.yml` | Redis | Using external MongoDB, ClickHouse, and S3 |
+| `full` | [`docker-compose.full.yml`](https://github.com/currents-dev/docker/blob/main/on-prem/docker-compose.full.yml) | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
+| `database` | [`docker-compose.database.yml`](https://github.com/currents-dev/docker/blob/main/on-prem/docker-compose.database.yml) | Redis, MongoDB, ClickHouse | Using external S3-compatible storage |
+| `cache` | [`docker-compose.cache.yml`](https://github.com/currents-dev/docker/blob/main/on-prem/docker-compose.cache.yml) | Redis | Using external MongoDB, ClickHouse, and S3 |
 
 ## Step 3: Configure Environment
 
@@ -517,6 +521,7 @@ DC_CLICKHOUSE_VOLUME=clickhouse-data
 ## Next Steps
 
 - Review the [Configuration Reference](./configuration.md) for all available options
+- Set up [Backup & Restore](./backup-restore.md) procedures for production use
+- Read the [Upgrading Guide](./upgrading.md) to learn how to update to new versions
 - Configure [Logging for Production](./logging.md) to ensure proper log management
 - Read the [Support Policy](./support.md) to understand support boundaries
-- Set up monitoring and backups for production use
