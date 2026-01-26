@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026-01-26-001] - 2026-01-26
+
 ### Added
 - Initial public release
 - Docker Compose configuration with modular profiles (full, database, cache)
