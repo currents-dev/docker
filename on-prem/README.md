@@ -32,17 +32,18 @@ templates/
 
 ### Configuration Profiles
 
-| Profile | Services Included | Use Case |
-|---------|-------------------|----------|
-| `full` | Redis, MongoDB, ClickHouse, RustFS | Running everything locally |
-| `database` | Redis, MongoDB, ClickHouse | External S3-compatible storage |
-| `cache` | Redis | External MongoDB, ClickHouse, and S3 |
+| Profile    | Services Included                  | Use Case                             |
+| ---------- | ---------------------------------- | ------------------------------------ |
+| `full`     | Redis, MongoDB, ClickHouse, RustFS | Running everything locally           |
+| `database` | Redis, MongoDB, ClickHouse         | External S3-compatible storage       |
+| `cache`    | Redis                              | External MongoDB, ClickHouse, and S3 |
 
 ### Scripts
 
 #### `scripts/setup.sh`
 
 Interactive setup wizard that:
+
 - Prompts for profile selection (or custom service selection)
 - Generates the docker-compose configuration
 - Creates `.env` from `.env.example` with auto-generated secrets
@@ -69,17 +70,17 @@ Generates a docker-compose file for a specific profile. Used by `setup.sh` but c
 
 **Available profiles:**
 
-| Profile | Description |
-|---------|-------------|
-| `full` | All services (redis, mongodb, clickhouse, rustfs) |
-| `database` | Database services (redis, mongodb, clickhouse) |
-| `cache` | Cache (redis) |
-| `analytics` | Analytics (clickhouse) |
-| `storage` | Object storage (rustfs) |
-| `redis` | Redis only |
-| `mongodb` | MongoDB only |
-| `clickhouse` | ClickHouse only |
-| `rustfs` | RustFS only |
+| Profile      | Description                                       |
+| ------------ | ------------------------------------------------- |
+| `full`       | All services (redis, mongodb, clickhouse, rustfs) |
+| `database`   | Database services (redis, mongodb, clickhouse)    |
+| `cache`      | Cache (redis)                                     |
+| `analytics`  | Analytics (clickhouse)                            |
+| `storage`    | Object storage (rustfs)                           |
+| `redis`      | Redis only                                        |
+| `mongodb`    | MongoDB only                                      |
+| `clickhouse` | ClickHouse only                                   |
+| `rustfs`     | RustFS only                                       |
 
 #### `scripts/generate-secrets.sh`
 
@@ -98,20 +99,21 @@ Utility for generating secrets and keys.
 
 ### Files
 
-| File | Description |
-|------|-------------|
-| `docker-compose.yml` | Symlink to your selected configuration |
-| `docker-compose.full.yml` | Pre-generated full configuration |
-| `docker-compose.database.yml` | Pre-generated database configuration |
-| `docker-compose.cache.yml` | Pre-generated cache configuration |
-| `.env` | Your environment configuration (git-ignored) |
-| `.env.example` | Template for environment configuration |
-| `templates/` | Source templates for compose generation |
-| [`docs/`](https://currents-dev.github.io/docker/) | User-facing documentation (GitHub Pages) |
+| File                                              | Description                                  |
+| ------------------------------------------------- | -------------------------------------------- |
+| `docker-compose.yml`                              | Symlink to your selected configuration       |
+| `docker-compose.full.yml`                         | Pre-generated full configuration             |
+| `docker-compose.database.yml`                     | Pre-generated database configuration         |
+| `docker-compose.cache.yml`                        | Pre-generated cache configuration            |
+| `.env`                                            | Your environment configuration (git-ignored) |
+| `.env.example`                                    | Template for environment configuration       |
+| `templates/`                                      | Source templates for compose generation      |
+| [`docs/`](https://currents-dev.github.io/docker/) | User-facing documentation (GitHub Pages)     |
 
 ### Services
 
 #### Currents Application
+
 - **director** (port 1234) - Test orchestration service
 - **api** (port 4000) - API and dashboard
 - **changestreams-worker** - MongoDB change stream processor
@@ -120,12 +122,14 @@ Utility for generating secrets and keys.
 - **webhooks** - Webhook delivery service
 
 #### Data Services (optional, based on profile)
+
 - **redis** (port 6379) - Cache and pub/sub
 - **mongodb** (port 27017) - Primary database
 - **clickhouse** (port 8123, 9123) - Analytics database
 - **rustfs** (port 9000, 9001) - S3-compatible object storage
 
 #### Optional Services
+
 - **traefik** (ports 80, 443) - TLS termination proxy (enabled with `--profile tls`)
 
 ### Regenerating Compose Files
