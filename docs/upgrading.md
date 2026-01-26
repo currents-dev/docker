@@ -150,6 +150,7 @@ If services fail with missing configuration errors:
 ./scripts/check-env.sh
 
 # Compare your .env with .env.example for new required variables
+# See: https://github.com/currents-dev/docker/blob/main/on-prem/.env.example
 diff <(grep -v '^#' .env | grep '=' | cut -d'=' -f1 | sort) \
      <(grep -v '^#' .env.example | grep '=' | cut -d'=' -f1 | sort)
 ```

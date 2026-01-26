@@ -8,13 +8,13 @@ on:
       - 'on-prem/docker-compose.*.yml'
       - 'on-prem/templates/**'
       - 'on-prem/scripts/**'
-      - '.env.example'
+      - 'on-prem/.env.example'
   pull_request:
     paths:
       - 'on-prem/docker-compose.*.yml'
       - 'on-prem/templates/**'
       - 'on-prem/scripts/**'
-      - '.env.example'
+      - 'on-prem/.env.example'
   workflow_dispatch:
 
 jobs:

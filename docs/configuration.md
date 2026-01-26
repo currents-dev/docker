@@ -35,6 +35,7 @@ These have defaults but you'll likely want to customize them.
 | `SMTP_PORT` | int | `587` | SMTP server port |
 | `SMTP_SECURE` | bool | `false` | Whether SMTP uses TLS |
 | `AUTOMATED_REPORTS_EMAIL_FROM` | string | `Currents Report <report@example.com>` | From address for automated report emails |
+| `INVITE_EMAIL_FROM` | string | `Currents App <no-reply@example.com>` | From address for invitation emails |
 | `FILE_STORAGE_ENDPOINT` | string | `http://localhost:9000` | Object storage endpoint (external access) |
 | `FILE_STORAGE_BUCKET` | string | `currents` | Object storage bucket name |
 | `FILE_STORAGE_ACCESS_KEY_ID` | string | `${RUSTFS_ACCESS_KEY}` | Object storage access key ID |
@@ -64,6 +65,9 @@ Less commonly changed settings with sensible defaults.
 | `FILE_STORAGE_INTERNAL_ENDPOINT` | string | `http://host.docker.internal:9000` | Object storage internal endpoint |
 | `FILE_STORAGE_FORCE_PATH_STYLE` | bool | _(commented)_ | Use path-style S3 URLs (auto-set to `true` when using RustFS profile) |
 | `AUTOMATED_REPORTS_EMAIL_BCC` | string | _(empty)_ | BCC address for automated reports |
+| `INVITE_EMAIL_BCC` | string | _(empty)_ | BCC address for invitation emails |
+| `INVITE_EXPIRATION_DAYS` | int | `14` | Number of days before invitations expire |
+| `EMAIL_LINKS_BASE_URL` | string | `${APP_BASE_URL}` | Base URL for links in emails (derived from APP_BASE_URL) |
 
 ### Docker Compose Configuration
 
