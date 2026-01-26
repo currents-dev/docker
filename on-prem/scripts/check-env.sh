@@ -70,7 +70,7 @@ if grep -q "^MONGODB_URI=" "$ENV_FILE"; then
         CORRUPTED+=("MONGODB_URI contains spaces - likely corrupted by editor line wrapping")
     fi
     # Check if it looks like it was split across lines (missing expected parts)
-    if [[ ! "$mongodb_uri" =~ "mongodb://" ]] || [[ ! "$mongodb_uri" =~ "@" ]]; then
+    if [[ ! "$mongodb_uri" =~ ^mongodb(\+srv)?:\/\/ ]] || [[ ! "$mongodb_uri" =~ "@" ]]; then
         CORRUPTED+=("MONGODB_URI appears incomplete - may have been split by line wrapping")
     fi
 fi
