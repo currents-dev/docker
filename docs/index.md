@@ -6,6 +6,8 @@ title: Currents On-Prem Documentation
 
 Docker Compose configuration for self-hosted Currents deployment.
 
+> For Kubernetes deployments and scaled production environments, see the [Currents Helm Chart](https://currents-dev.github.io/helm-charts/docs/) documentation.
+
 ## Getting Started
 
 - [Quickstart Guide](quickstart.md) — Get up and running with Docker Compose
