@@ -10,7 +10,7 @@ Set up Currents in self-hosted environments using Docker Compose.
 
 <small>Looking for Kubernetes deployment? See [Currents K8S Setup](https://currents-dev.github.io/helm-charts/docs/).</small>
 
-## Quckstart
+## Quickstart
 
 ```bash
 cd on-prem
