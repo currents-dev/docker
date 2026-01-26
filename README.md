@@ -5,6 +5,7 @@ Set up Currents in self-hosted environments using Docker Compose.
 - [Docker Compose Setup](https://currents-dev.github.io/docker)
 - [Docker Compose Configuration Reference](https://currents-dev.github.io/docker/configuration.html)
 - [AWS IAM User Setup](https://currents-dev.github.io/helm-charts/docs/eks/iam.html)
+- [Support Policy](https://currents-dev.github.io/helm-charts/docs/support.html)
 
 ⚠️ Important! You must be authenticated as an AWS IAM user to pull images from Current’s Private AWS ECR repositories. Contact [Currents team](mailto:support@currents.dev) with your AWS IAM user details to request access.
 
