@@ -17,12 +17,17 @@ When a new version only includes updated container images (no compose or config 
 ```bash
 cd on-prem
 
-# Pull latest images
+# Update the image tag in your .env file
+# Change DC_CURRENTS_IMAGE_TAG to the new version (e.g., 2026-01-26-001)
+
+# Pull the new images
 docker compose pull
 
 # Restart with new images
 docker compose up -d
 ```
+
+> **Note:** The `DC_CURRENTS_IMAGE_TAG` in your `.env` file controls which version of Currents images are pulled. You must update this value to pull a new version. Run `./scripts/check-env.sh` to see if your tag differs from the current release.
 
 ### Updates with Compose File Changes
 
@@ -36,6 +41,9 @@ docker compose down
 
 # Pull latest repository changes
 git pull
+
+# Update DC_CURRENTS_IMAGE_TAG in your .env file to the new version
+# Check VERSION file for the current release version: cat VERSION
 
 # Regenerate your compose file (if using custom profile)
 ./scripts/generate-compose.sh <your-profile>
@@ -59,13 +67,18 @@ cd on-prem
 # Pull latest repository changes
 git pull
 
-# Check for missing variables
+# Check for missing variables and version discrepancies
 ./scripts/check-env.sh
 
 # Add any missing variables to your .env file
 # The script will show which variables are missing
 
-# Then follow the appropriate upgrade steps above
+# Update DC_CURRENTS_IMAGE_TAG in your .env file to the new version
+# Check VERSION file for the current release version: cat VERSION
+
+# Pull new images and restart
+docker compose pull
+docker compose up -d
 ```
 
 ## Version Checking
