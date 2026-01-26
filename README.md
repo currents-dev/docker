@@ -29,33 +29,57 @@ Releases are tied to Currents container image tags, which use date-based version
 
 ### Release Process
 
-#### 1. Update the version
+> **Note:** `2026-01-14-001` is used as an example version throughout these steps. Replace it with the actual version you're releasing (format: `YYYY-MM-DD-NNN`).
+
+#### 1. Create a release branch
+
+```bash
+git checkout -b release-on-prem/2026-01-14-001
+```
+
+#### 2. Update the version
 
 Edit `on-prem/VERSION` and `on-prem/.env.example` with the image tag.
 
-#### 2. **Update the changelog** in `on-prem/CHANGELOG.md`
+#### 3. Update the changelog in `on-prem/CHANGELOG.md`
 
 - Move items from "Unreleased" to a new version section
 - Add release date and summary of changes
 
-#### 3. Commit the release
+#### 4. Commit and push the release branch
 
 ```bash
 git add on-prem/VERSION on-prem/.env.example on-prem/CHANGELOG.md
 git commit -m "release: on-prem 2026-01-14-001"
+git push -u origin HEAD
 ```
 
-#### 4. Create a git tag (namespaced for on-prem)
+#### 5. Create a PR and wait for CI
 
 ```bash
+gh pr create --title "release: on-prem 2026-01-14-001" --body "Release on-prem 2026-01-14-001"
+```
+
+CI will run validation and smoke tests. Wait for checks to pass, then get the PR reviewed and merged.
+
+#### 6. Tag the release from main
+
+> **Important:** Always tag from `main` after the PR is merged to ensure the tag points to the merged commit.
+
+```bash
+git checkout main && git pull
 git tag on-prem/2026-01-14-001
+git push origin on-prem/2026-01-14-001
 ```
 
-#### 5. Push
+#### 7. Create a GitHub release
 
-```bash
-git push && git push --tags
-```
+Create a release on GitHub for the tag:
+
+1. Go to [Releases](https://github.com/currents-dev/docker/releases/new)
+2. Select the tag `on-prem/2026-01-14-001`
+3. Set the title to `on-prem/2026-01-14-001`
+4. Add release notes linking to the CHANGELOG
 
 ### Tag Format
 
