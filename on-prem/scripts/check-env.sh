@@ -59,6 +59,26 @@ while IFS= read -r line || [ -n "$line" ]; do
 done < "$EXAMPLE_FILE"
 
 # =============================================================================
+# Check for version discrepancy
+# =============================================================================
+VERSION_FILE="$ON_PREM_DIR/VERSION"
+if [ -f "$VERSION_FILE" ]; then
+    expected_version=$(cat "$VERSION_FILE" | tr -d '[:space:]')
+    if grep -q "^DC_CURRENTS_IMAGE_TAG=" "$ENV_FILE"; then
+        current_tag=$(grep "^DC_CURRENTS_IMAGE_TAG=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
+        if [ -n "$current_tag" ] && [ "$current_tag" != "$expected_version" ]; then
+            echo -e "${YELLOW}Note: Version discrepancy detected${NC}"
+            echo "  Your .env has DC_CURRENTS_IMAGE_TAG=$current_tag"
+            echo "  The VERSION file specifies: $expected_version"
+            echo ""
+            echo "  To upgrade, update DC_CURRENTS_IMAGE_TAG in your .env file,"
+            echo "  then run: docker compose pull && docker compose up -d"
+            echo ""
+        fi
+    fi
+fi
+
+# =============================================================================
 # Check for corrupted values (e.g., line wrapping from terminal editors)
 # =============================================================================
 CORRUPTED=()
