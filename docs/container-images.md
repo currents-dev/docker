@@ -107,6 +107,67 @@ DC_CURRENTS_IMAGE_TAG=staging
 
 > **Note:** When pulling directly from ECR, you'll need to re-authenticate periodically as credentials expire after 12 hours. Mirroring to your own registry avoids this operational overhead.
 
+---
+
+## Alternative: GitHub Container Registry
+
+If you cannot easily set up AWS IAM role access, Currents also provides images via GitHub Container Registry (GHCR) for specific customer accounts.
+
+### Prerequisites
+
+You must be invited to the private repository: [github.com/currents-dev/customer-images](https://github.com/currents-dev/customer-images)
+
+Contact your Currents representative to request access.
+
+### 1. Authenticate with GHCR
+
+Once you have access to the repository, create a Personal Access Token and authenticate Docker:
+
+1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
+2. Click **Generate new token (classic)**
+3. Select the `read:packages` scope
+4. Copy the generated token
+
+Then log in to GHCR:
+
+```bash
+echo $GITHUB_PAT | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+```
+
+### 2. Configure Docker Compose
+
+Update your `.env` file to use the GHCR images:
+
+```bash
+# Point to GitHub Container Registry
+DC_CURRENTS_IMAGE_REPOSITORY=ghcr.io/currents-dev/currents-
+
+# Specify the image tag
+DC_CURRENTS_IMAGE_TAG=staging
+```
+
+### 3. Mirror Images (Recommended)
+
+As with AWS ECR, we recommend mirroring images to your own registry for production deployments:
+
+```bash
+SOURCE_REGISTRY=ghcr.io/currents-dev/currents-
+TARGET_REGISTRY=your-registry.example.com/currents/
+TAG=staging
+
+SERVICES="api director change-streams scheduler writer webhooks"
+
+for service in $SERVICES; do
+  docker pull ${SOURCE_REGISTRY}${service}:${TAG}
+  docker tag ${SOURCE_REGISTRY}${service}:${TAG} ${TARGET_REGISTRY}${service}:${TAG}
+  docker push ${TARGET_REGISTRY}${service}:${TAG}
+done
+```
+
+> **Note:** The GHCR image naming uses `currents-` prefix (e.g., `currents-api`) rather than a path separator.
+
+---
+
 ## Next Steps
 
 Once you have access to the container images, continue with the [Quickstart Guide](./quickstart.md).
