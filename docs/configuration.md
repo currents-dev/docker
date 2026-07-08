@@ -69,6 +69,21 @@ Less commonly changed settings with sensible defaults.
 | `INVITE_EXPIRATION_DAYS` | int | `14` | Number of days before invitations expire |
 | `EMAIL_LINKS_BASE_URL` | string | `${APP_BASE_URL}` | Base URL for links in emails (derived from APP_BASE_URL) |
 
+### SAML SSO (Optional)
+
+Enable SAML single sign-on by setting the two required variables and mounting your IdP metadata file into `./data/sso`. See [Enable SAML SSO](sso-saml.md) for the full walkthrough. SSO turns on automatically once both required variables are set — there is no separate enable flag.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `SSO_SAML_IDP_METADATA_FILE` | string | _(empty)_ | Path to the mounted IdP metadata XML (e.g. `/etc/currents/sso/idp-metadata.xml`). **Required to enable SSO.** |
+| `SSO_SAML_ISSUER` | string | _(empty)_ | SP entityID / audience — a stable opaque identifier (e.g. `currents-onprem:your-org`). Must match the Audience / SP Entity ID configured in your IdP. **Required to enable SSO.** |
+| `SSO_SAML_PROVIDER_ID` | string | `onprem-saml` | Provider id; recommend your IdP name (e.g. `okta`). Becomes the last path segment of the ACS callback URL. |
+| `SSO_SAML_DEFAULT_ROLE` | string | `member` | Role granted to auto-provisioned SSO users |
+| `SSO_ALLOWED_DOMAINS` | string | _(empty)_ | Comma-separated email domains allowed to sign in via SSO |
+| `SSO_SAML_AUTHN_REQUESTS_SIGNED` | bool | `false` | Sign outbound AuthnRequests (requires the SP key/cert below) |
+| `SSO_SAML_SP_CERT_FILE` | string | _(empty)_ | Path to the mounted SP certificate PEM (only when signing requests) |
+| `SSO_SAML_SP_KEY_FILE` | string | _(empty)_ | Path to the mounted SP private key PEM (only when signing requests) |
+
 ### Docker Compose Configuration
 
 These variables configure Docker Compose behavior only (not passed to containers). All are optional with sensible defaults.
@@ -107,6 +122,7 @@ These variables configure Docker Compose behavior only (not passed to containers
 | `DC_CLICKHOUSE_VOLUME` | string | `./data/clickhouse` | ClickHouse data volume path |
 | `DC_RUSTFS_VOLUME` | string | `./data/rustfs` | RustFS data volume path |
 | `DC_SCHEDULER_STARTUP_VOLUME` | string | `./data/startup` | Scheduler startup data volume |
+| `DC_SSO_VOLUME` | string | `./data/sso` | SAML SSO files directory (IdP metadata + optional SP PEMs), mounted read-only to `/etc/currents/sso` |
 
 #### Traefik Configuration
 

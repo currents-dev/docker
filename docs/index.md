@@ -12,6 +12,7 @@ Docker Compose configuration for self-hosted Currents deployment.
 
 - [Quickstart Guide](quickstart.md) — Get up and running with Docker Compose
 - [Configuration Reference](configuration.md) — All environment variables and settings
+- [Enable SAML SSO](sso-saml.md) — Delegate sign-in to your SAML identity provider
 - [Logging Configuration](logging.md) — Configure container logging for production
 - [Backup and Restore](backup-restore.md) — Backup and restore procedures
 - [Upgrading Currents On-Prem](upgrading.md) — Upgrade workflows and version management

@@ -12,6 +12,7 @@ Currents stores data in several locations:
 | ClickHouse | `data/clickhouse` | Analytics and reporting data |
 | Redis | `data/redis` | Cache and session data (optional to backup) |
 | RustFS | `data/rustfs` | Artifacts, screenshots, videos (if using the provided rustfs) |
+| SAML SSO | `data/sso` | IdP metadata XML + optional SP cert/key (only if SSO is enabled) |
 
 ## Before You Begin
 
@@ -124,6 +125,16 @@ tar -czvf redis-backup-$(date +%Y%m%d).tar.gz data/redis/
 docker compose start
 ```
 
+### SAML SSO Files (Optional)
+
+If SAML SSO is enabled, `data/sso` holds your IdP metadata XML (and, if you sign AuthnRequests, the SP certificate/key PEMs). It is included in the full `data/` backup above; to back up just this folder:
+
+```bash
+tar -czvf sso-backup-$(date +%Y%m%d).tar.gz data/sso/
+```
+
+> **Important:** If you configured an SP private key (`sp-key.pem`), this folder contains a secret — store the archive securely. The IdP metadata itself can always be re-downloaded from your identity provider, so this backup is a convenience rather than a hard requirement.
+
 ## Restore Procedures
 
 ### Prerequisites
@@ -219,4 +230,15 @@ rm -rf data/rustfs/
 tar -xzvf rustfs-backup-YYYYMMDD.tar.gz
 docker compose up -d
 ```
+
+### SAML SSO Restore
+
+```bash
+docker compose down
+rm -rf data/sso/
+tar -xzvf sso-backup-YYYYMMDD.tar.gz
+docker compose up -d
+```
+
+> **Podman users:** the API reads this folder as uid 1000 — after extracting, run `podman unshare chown -R 1000:1000 data/sso` (rootless) or `sudo chown -R 1000:1000 data/sso` (rootful). See the [quickstart troubleshooting](./quickstart.md#podman-permission-denied-errors) section.
 

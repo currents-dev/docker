@@ -153,6 +153,17 @@ Common SMTP configurations:
 | Mailgun | `smtp.mailgun.org` | 587 | false |
 | Gmail | `smtp.gmail.com` | 587 | false |
 
+### SAML SSO (optional)
+
+To let users sign in through your SAML identity provider (Okta, Entra ID, etc.), create a SAML app in your IdP, mount its metadata XML into `./data/sso`, and set two variables:
+
+```bash
+SSO_SAML_IDP_METADATA_FILE=/etc/currents/sso/idp-metadata.xml
+SSO_SAML_ISSUER=currents-onprem:your-org
+```
+
+See [Enable SAML SSO](./sso-saml.md) for the full walkthrough.
+
 See [Configuration Reference](./configuration.md) for all available options.
 
 ## Step 4: Start Services
@@ -322,7 +333,7 @@ This is due to Podman's rootless mode and UID mapping. Follow these steps:
 Create the data directories manually before starting services:
 
 ```bash
-mkdir -p data/mongodb data/redis data/clickhouse data/rustfs data/startup data/traefik/certs data/traefik/config
+mkdir -p data/mongodb data/redis data/clickhouse data/rustfs data/startup data/sso data/traefik/certs data/traefik/config
 ```
 
 #### Step 2: Set Permissions
@@ -346,6 +357,9 @@ podman unshare chown -R 10001:10001 data/rustfs
 # Scheduler runs as uid 1000
 podman unshare chown -R 1000:1000 data/startup
 
+# API runs as uid 1000 (only needed if using SAML SSO)
+podman unshare chown -R 1000:1000 data/sso
+
 # Traefik runs as root (uid 0) - no chown needed, just create dirs
 ```
 
@@ -365,6 +379,9 @@ sudo chown -R 10001:10001 data/rustfs
 
 # Scheduler runs as uid 1000
 sudo chown -R 1000:1000 data/startup
+
+# API runs as uid 1000 (only needed if using SAML SSO)
+sudo chown -R 1000:1000 data/sso
 
 # Traefik runs as root (uid 0) - no chown needed
 ```
@@ -387,6 +404,7 @@ sudo chcon -Rt svirt_sandbox_file_t data/redis
 sudo chcon -Rt svirt_sandbox_file_t data/clickhouse
 sudo chcon -Rt svirt_sandbox_file_t data/rustfs
 sudo chcon -Rt svirt_sandbox_file_t data/startup
+sudo chcon -Rt svirt_sandbox_file_t data/sso
 sudo chcon -Rt svirt_sandbox_file_t data/traefik
 ```
 
@@ -515,6 +533,7 @@ DC_CLICKHOUSE_VOLUME=clickhouse-data
 | `DC_CLICKHOUSE_VOLUME` | `./data/clickhouse` | ClickHouse data storage |
 | `DC_RUSTFS_VOLUME` | `./data/rustfs` | RustFS object storage |
 | `DC_SCHEDULER_STARTUP_VOLUME` | `./data/startup` | Scheduler startup state |
+| `DC_SSO_VOLUME` | `./data/sso` | SAML SSO files, mounted read-only |
 
 > **Tip:** Named Docker volumes are useful when you need encryption, network-attached storage, or custom volume drivers that aren't possible with bind mounts.
 
