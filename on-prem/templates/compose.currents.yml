@@ -31,6 +31,8 @@ services:
       BETTER_AUTH_ENABLED: "true"
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+    volumes:
+      - ${DC_SSO_VOLUME:-./data/sso}:/etc/currents/sso:ro
 
   changestreams-worker:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}change-streams:${DC_CURRENTS_IMAGE_TAG:-staging}
