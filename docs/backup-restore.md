@@ -67,6 +67,7 @@ docker compose exec mongodb mongodump \
   -u "$MONGODB_USERNAME" \
   -p "$MONGODB_PASSWORD" \
   --authenticationDatabase admin \
+  --db "$MONGODB_DATABASE" \
   --archive=/data/db/backup.archive
 
 # Copy backup out of container
