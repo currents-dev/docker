@@ -104,6 +104,7 @@ jobs:
           echo "Creating MongoDB backup..."
           docker compose -f docker-compose.full.yml exec -T mongodb mongodump \
             -u "$MONGODB_USERNAME" -p "$MONGODB_PASSWORD" --authenticationDatabase admin \
+            --db "$MONGODB_DATABASE" \
             --archive=/data/db/backup.archive
           docker compose -f docker-compose.full.yml cp mongodb:/data/db/backup.archive ./mongodb-backup.archive
           echo "✅ Backup created"
