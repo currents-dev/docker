@@ -18,8 +18,14 @@ FILE_STORAGE_ENDPOINT=https://s3.us-east-1.amazonaws.com
 FILE_STORAGE_INTERNAL_ENDPOINT=https://s3.us-east-1.amazonaws.com
 FILE_STORAGE_REGION=us-east-1
 FILE_STORAGE_BUCKET=currents-artifacts
-FILE_STORAGE_ACCESS_KEY_ID=<access key id>
-FILE_STORAGE_SECRET_ACCESS_KEY=<secret access key>
+FILE_STORAGE_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+FILE_STORAGE_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+The values above are AWS's documentation examples. Use an access key for the IAM user that has the [IAM policy](#iam-policy) below. Create one in the IAM console (**Users → *user* → Security credentials → Create access key**) or with the AWS CLI, replacing `currents-storage` with the IAM user name:
+
+```bash
+aws iam create-access-key --user-name currents-storage
 ```
 
 - `FILE_STORAGE_REGION` must be the bucket's region, and `FILE_STORAGE_ENDPOINT` that region's S3 endpoint. Signed URLs for any other region are rejected.
@@ -28,7 +34,7 @@ FILE_STORAGE_SECRET_ACCESS_KEY=<secret access key>
 
 ## IAM Policy
 
-Attach this policy to the IAM user or role whose credentials are in `FILE_STORAGE_ACCESS_KEY_ID` / `FILE_STORAGE_SECRET_ACCESS_KEY`. Replace `<bucket>` with your bucket name.
+Attach this policy to the IAM user or role whose credentials are in `FILE_STORAGE_ACCESS_KEY_ID` / `FILE_STORAGE_SECRET_ACCESS_KEY`. Replace `currents-artifacts` with your bucket name.
 
 ```json
 {
@@ -37,12 +43,12 @@ Attach this policy to the IAM user or role whose credentials are in `FILE_STORAG
     {
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:GetObject"],
-      "Resource": "arn:aws:s3:::<bucket>/*"
+      "Resource": "arn:aws:s3:::currents-artifacts/*"
     },
     {
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::<bucket>"
+      "Resource": "arn:aws:s3:::currents-artifacts"
     }
   ]
 }
@@ -50,7 +56,7 @@ Attach this policy to the IAM user or role whose credentials are in `FILE_STORAG
 
 `s3:ListBucket` lets S3 answer `404 Not Found` for a missing object. Without it, S3 answers `403 Access Denied`, so a missing artifact looks like a permissions problem.
 
-If the bucket uses SSE-KMS with a customer-managed key, also allow `kms:GenerateDataKey` (for uploads) and `kms:Decrypt` (for downloads) on that key for the same identity.
+If the bucket uses SSE-KMS with a customer-managed key, also allow `kms:GenerateDataKey` (for uploads) and `kms:Decrypt` (for downloads) on that key for the same identity. The key policy must allow that identity too, either directly or with the default statement that lets IAM policies grant access to the key. Otherwise uploads and downloads fail with `AccessDenied`.
 
 ## CORS Configuration
 
@@ -68,10 +74,10 @@ The dashboard downloads stdout and attachment previews from the browser, and tra
 ]
 ```
 
-Replace `https://currents.example.com` with your `APP_BASE_URL`, without a trailing slash. Apply it in the S3 console (**Bucket → Permissions → Cross-origin resource sharing (CORS)**) or with the AWS CLI. The CLI expects the rule wrapped in a `CORSRules` key:
+Replace `https://currents.example.com` with your `APP_BASE_URL`, without a trailing slash. Apply it in the S3 console (**Bucket → Permissions → Cross-origin resource sharing (CORS)**) or with the AWS CLI. The CLI expects the rule wrapped in a `CORSRules` key. Replace `currents-artifacts` with your bucket name:
 
 ```bash
-aws s3api put-bucket-cors --bucket <bucket> --cors-configuration '{
+aws s3api put-bucket-cors --bucket currents-artifacts --cors-configuration '{
   "CORSRules": [
     {
       "AllowedOrigins": ["https://currents.example.com", "https://trace.playwright.dev"],
