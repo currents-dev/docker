@@ -34,7 +34,7 @@ aws iam create-access-key --user-name currents-storage
 
 ## IAM Policy
 
-Attach this policy to the IAM user or role whose credentials are in `FILE_STORAGE_ACCESS_KEY_ID` / `FILE_STORAGE_SECRET_ACCESS_KEY`. Replace `currents-artifacts` with your bucket name.
+Attach this policy to the IAM user or role whose credentials are in `FILE_STORAGE_ACCESS_KEY_ID` / `FILE_STORAGE_SECRET_ACCESS_KEY`. Replace `currents-artifacts` with your bucket name. This assumes the IAM identity, the bucket and any KMS key are in the same AWS account. If the bucket is in another account, the bucket owner must also grant these actions to the identity in a bucket policy, and a KMS key's policy must allow the identity's account.
 
 ```json
 {
