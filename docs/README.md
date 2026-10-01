@@ -14,6 +14,7 @@ The Docker Compose configuration is modular, allowing you to choose which data s
 - [Container Image Access](./container-images.md)
 - [Configuration Reference](./configuration.md)
 - [Enable SAML SSO](./sso-saml.md)
+- [Use AWS S3 for Artifact Storage](./object-storage.md)
 - [Logging Configuration](./logging.md)
 - [Backup and Restore](./backup-restore.md)
 - [Upgrading Currents On-Prem](./upgrading.md)

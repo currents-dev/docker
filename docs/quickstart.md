@@ -108,6 +108,8 @@ FILE_STORAGE_REGION=us-east-1
 # FILE_STORAGE_FORCE_PATH_STYLE=true
 ```
 
+For AWS S3, also set `FILE_STORAGE_INTERNAL_ENDPOINT` to the same endpoint, and give the bucket the IAM policy and CORS rules in [Use AWS S3 for Artifact Storage](./object-storage.md).
+
 If using the included RustFS for testing, configure the `RUSTFS_*` variables instead. The RustFS profile automatically sets `FILE_STORAGE_FORCE_PATH_STYLE=true` for all services.
 
 > ⚠️ **Production Note:** RustFS is intended for local development and testing only—it is **not recommended for production deployments**. The included Docker Compose configuration is designed for local development; production environments should use external, production-grade object storage backends such as AWS S3, Google Cloud Storage, or a managed MinIO cluster.

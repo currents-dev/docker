@@ -62,7 +62,7 @@ Less commonly changed settings with sensible defaults.
 | `REDIS_URI` | string | `redis://redis:6379` | Redis connection URI |
 | `REDIS_URI_SLAVE` | string | `redis://redis:6379` | Redis replica connection URI |
 | `RUSTFS_ACCESS_KEY` | string | `rustfs-access-key` | RustFS/S3 access key |
-| `FILE_STORAGE_INTERNAL_ENDPOINT` | string | `http://host.docker.internal:9000` | Object storage internal endpoint |
+| `FILE_STORAGE_INTERNAL_ENDPOINT` | string | `http://host.docker.internal:9000` | Object storage endpoint the services use from inside Docker. For AWS S3, set it to `FILE_STORAGE_ENDPOINT` ([details](./object-storage.md)) |
 | `FILE_STORAGE_FORCE_PATH_STYLE` | bool | _(commented)_ | Use path-style S3 URLs (auto-set to `true` when using RustFS profile) |
 | `AUTOMATED_REPORTS_EMAIL_BCC` | string | _(empty)_ | BCC address for automated reports |
 | `INVITE_EMAIL_BCC` | string | _(empty)_ | BCC address for invitation emails |
