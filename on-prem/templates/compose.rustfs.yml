@@ -4,7 +4,7 @@
 services:
   rustfs:
     hostname: rustfs
-    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.0-alpha.79}
+    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.1}
     ports:
       - ${DC_RUSTFS_S3_PORT:-9000}:9000  # S3 API port
       - ${DC_RUSTFS_CONSOLE_PORT:-9001}:9001  # Web console port
