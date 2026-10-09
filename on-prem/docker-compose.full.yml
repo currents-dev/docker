@@ -278,6 +278,10 @@ services:
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      # The dashboard and https://trace.playwright.dev fetch objects from the
+      # browser through presigned URLs. RustFS sends no CORS headers unless this
+      # or a bucket CORS rule is set.
+      RUSTFS_CORS_ALLOWED_ORIGINS: "*"
     env_file:
       - .env
     networks:

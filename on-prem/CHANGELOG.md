@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Compose File Changes
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
+- The `rustfs` service sets `RUSTFS_CORS_ALLOWED_ORIGINS: "*"`. `1.0.1` sends no CORS headers without it, which breaks trace.playwright.dev and the dashboard's stdout and attachment previews. If you run `1.0.1` from your own compose file, add it there too.
 
 ### Changed Environment Variables
 - `DC_RUSTFS_IMAGE` defaults to `rustfs/rustfs:1.0.1`. If your `.env` sets it, update the value to pick up the fixes below.
