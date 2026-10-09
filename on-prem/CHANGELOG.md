@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Compose File Changes
+- The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
+- The `rustfs` service sets `RUSTFS_CORS_ALLOWED_ORIGINS: "*"`. `1.0.1` sends no CORS headers without it, which breaks trace.playwright.dev and the dashboard's stdout and attachment previews. If you run `1.0.1` from your own compose file, add it there too.
+
+### Changed Environment Variables
+- `DC_RUSTFS_IMAGE` defaults to `rustfs/rustfs:1.0.1`. If your `.env` sets it, update the value to pick up the fixes below.
+
+### Fixed
+- The bundled RustFS enforces bucket lifecycle rules. `1.0.0-alpha.79` accepted a lifecycle configuration and returned it from `GetBucketLifecycleConfiguration`, but never expired the matching objects.
+- The bundled RustFS includes the fix for CVE-2026-73288, where lifecycle and scanner sweeps could expire objects under COMPLIANCE retention when lock metadata was missing or unreadable.
+
 ## [2026-07-26-006] - 2026-10-07
 
 Image-only update: no compose file or environment variable changes. Update `DC_CURRENTS_IMAGE_TAG`, then `docker compose pull && docker compose up -d`.

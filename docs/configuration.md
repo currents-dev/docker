@@ -97,7 +97,7 @@ These variables configure Docker Compose behavior only (not passed to containers
 | `DC_MONGODB_IMAGE` | string | `mongo:8.2.3` | MongoDB image |
 | `DC_REDIS_IMAGE` | string | `redis/redis-stack-server:7.4.0-v8` | Redis image |
 | `DC_CLICKHOUSE_IMAGE` | string | `clickhouse/clickhouse-server:25.8` | ClickHouse image |
-| `DC_RUSTFS_IMAGE` | string | `rustfs/rustfs:1.0.0-alpha.79` | RustFS image |
+| `DC_RUSTFS_IMAGE` | string | `rustfs/rustfs:1.0.1` | RustFS image |
 | `DC_AWS_CLI_IMAGE` | string | `amazon/aws-cli:latest` | AWS CLI image (for bucket init) |
 
 #### Port Configuration

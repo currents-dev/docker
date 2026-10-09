@@ -270,7 +270,7 @@ services:
       - ${DC_REDIS_VOLUME:-./data/redis}:/data
   rustfs:
     hostname: rustfs
-    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.0-alpha.79}
+    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.1}
     ports:
       - ${DC_RUSTFS_S3_PORT:-9000}:9000 # S3 API port
       - ${DC_RUSTFS_CONSOLE_PORT:-9001}:9001 # Web console port
@@ -278,6 +278,10 @@ services:
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      # The dashboard and https://trace.playwright.dev fetch objects from the
+      # browser through presigned URLs. RustFS sends no CORS headers unless this
+      # or a bucket CORS rule is set.
+      RUSTFS_CORS_ALLOWED_ORIGINS: "*"
     env_file:
       - .env
     networks:
