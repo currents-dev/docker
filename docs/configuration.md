@@ -41,6 +41,11 @@ These have defaults but you'll likely want to customize them.
 | `FILE_STORAGE_ACCESS_KEY_ID` | string | `${RUSTFS_ACCESS_KEY}` | Object storage access key ID |
 | `FILE_STORAGE_SECRET_ACCESS_KEY` | string | `${RUSTFS_SECRET_KEY}` | Object storage secret access key |
 | `FILE_STORAGE_REGION` | string | _(commented)_ | S3 region (required for AWS S3) |
+| `APP_CONTENT_STORAGE_ENDPOINT` | string | `${FILE_STORAGE_ENDPOINT}` | App content bucket endpoint (external access): context shares, organization logos and session files. Unset, context sharing and logo editing are off and session files cannot be uploaded ([details](./object-storage.md#app-content-bucket)) |
+| `APP_CONTENT_STORAGE_BUCKET` | string | `currents-app-content` | App content bucket name |
+| `APP_CONTENT_STORAGE_ACCESS_KEY_ID` | string | `${FILE_STORAGE_ACCESS_KEY_ID}` | App content bucket access key ID |
+| `APP_CONTENT_STORAGE_SECRET_ACCESS_KEY` | string | `${FILE_STORAGE_SECRET_ACCESS_KEY}` | App content bucket secret access key |
+| `APP_CONTENT_STORAGE_REGION` | string | _(commented)_ | S3 region (required for AWS S3) |
 | `CLICKHOUSE_URL` | string | `http://clickhouse:8123` | ClickHouse HTTP endpoint |
 | `CLICKHOUSE_USERNAME` | string | `currents` | ClickHouse username |
 | `MONGODB_USERNAME` | string | `currents-user` | MongoDB username |
@@ -64,10 +69,27 @@ Less commonly changed settings with sensible defaults.
 | `RUSTFS_ACCESS_KEY` | string | `rustfs-access-key` | RustFS/S3 access key |
 | `FILE_STORAGE_INTERNAL_ENDPOINT` | string | `http://host.docker.internal:9000` | Object storage endpoint the services use from inside Docker. For AWS S3, set it to `FILE_STORAGE_ENDPOINT` ([details](./object-storage.md)) |
 | `FILE_STORAGE_FORCE_PATH_STYLE` | bool | _(commented)_ | Use path-style S3 URLs (auto-set to `true` when using RustFS profile) |
+| `APP_CONTENT_STORAGE_INTERNAL_ENDPOINT` | string | `${FILE_STORAGE_INTERNAL_ENDPOINT}` | App content bucket endpoint the services use from inside Docker |
+| `APP_CONTENT_STORAGE_FORCE_PATH_STYLE` | bool | _(commented)_ | Path-style URLs for the app content bucket (auto-set to `true` when using RustFS profile) |
+| `API_BASE_URL` | string | `${APP_BASE_URL}` | Public API origin, used in share links and as the OAuth token audience |
 | `AUTOMATED_REPORTS_EMAIL_BCC` | string | _(empty)_ | BCC address for automated reports |
 | `INVITE_EMAIL_BCC` | string | _(empty)_ | BCC address for invitation emails |
 | `INVITE_EXPIRATION_DAYS` | int | `14` | Number of days before invitations expire |
 | `EMAIL_LINKS_BASE_URL` | string | `${APP_BASE_URL}` | Base URL for links in emails (derived from APP_BASE_URL) |
+
+### Remote MCP and OAuth
+
+Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mcp`. Clients authenticate with a Currents API key or personal access token, or, with the OAuth provider on, by signing in with a Currents account. Both endpoints are reachable by anyone who can reach the install; they refuse requests without a valid credential.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MCP_ENABLED` | bool | `true` | Serve remote MCP at `/mcp`. Set `false` to turn it off; `/mcp` then answers 503 |
+| `MCP_ORIGINS` | string | _(empty)_ | Other origins clients reach `/mcp` on, comma separated |
+| `OAUTH_PROVIDER_ENABLED` | bool | `true` in `.env.example` | Serve OAuth authorization (`/api/auth/oauth2/*`, `/.well-known/oauth-*`). Issuer, token audience and JWKS URL are derived from `APP_BASE_URL`. Off when absent, so an upgraded `.env` keeps it off until added. Use an `https` `APP_BASE_URL` for any real setup. Over `http` it works only on `localhost`, or, for an evaluation, on a `.localhost` name in `OAUTH_HTTP_ALLOWED_HOSTS`. On any other `http` host the API refuses to start with it on, so set it to `false` there |
+| `OAUTH_DYNAMIC_CLIENT_REGISTRATION_ENABLED` | bool | `true` in `.env.example` | Let clients register themselves, the way to add a client without internet access |
+| `OAUTH_CIMD_ENABLED` | bool | `true` | Accept clients identified by a client ID metadata document: an https URL the server fetches. Hosts resolving to private, loopback or link-local addresses are refused |
+| `OAUTH_HTTP_ALLOWED_HOSTS` | string | _(empty)_ | For an evaluation without TLS: a `.localhost` name (e.g. `currents.localhost`) the OAuth endpoints may serve over `http`. Browsers resolve `.localhost` names to this machine. Another `http` host starts, but OAuth clients are sent to an `https` issuer the install does not serve |
+| `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
 
 ### SAML SSO (Optional)
 
@@ -80,8 +102,7 @@ Enable SAML single sign-on by setting the two required variables and mounting yo
 | `SSO_SAML_PROVIDER_ID` | string | `onprem-saml` | Provider id; recommend your IdP name (e.g. `okta`). Becomes the last path segment of the ACS callback URL. |
 | `SSO_SAML_DEFAULT_ROLE` | string | `member` | Role granted to auto-provisioned SSO users |
 | `SSO_ALLOWED_DOMAINS` | string | _(empty)_ | Comma-separated email domains allowed to sign in via SSO |
-| `SSO_SAML_AUTHN_REQUESTS_SIGNED` | bool | `false` | Sign outbound AuthnRequests (requires the SP key/cert below) |
-| `SSO_SAML_SP_CERT_FILE` | string | _(empty)_ | Path to the mounted SP certificate PEM (only when signing requests) |
+| `SSO_SAML_AUTHN_REQUESTS_SIGNED` | bool | `false` | Sign outbound AuthnRequests (requires the SP key below) |
 | `SSO_SAML_SP_KEY_FILE` | string | _(empty)_ | Path to the mounted SP private key PEM (only when signing requests) |
 
 ### Docker Compose Configuration
@@ -99,6 +120,12 @@ These variables configure Docker Compose behavior only (not passed to containers
 | `DC_CLICKHOUSE_IMAGE` | string | `clickhouse/clickhouse-server:25.8` | ClickHouse image |
 | `DC_RUSTFS_IMAGE` | string | `rustfs/rustfs:1.0.1` | RustFS image |
 | `DC_AWS_CLI_IMAGE` | string | `amazon/aws-cli:latest` | AWS CLI image (for bucket init) |
+
+#### Included RustFS
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS` | int | _(unset)_ | Delete artifacts (screenshots, videos, traces, stdout) older than this many days, through a lifecycle rule `rustfs-init` applies. Unset keeps them until deleted. Other storage: [Artifact expiry](./object-storage.md#artifact-expiry) |
 
 #### Port Configuration
 

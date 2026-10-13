@@ -51,6 +51,18 @@ services:
       BETTER_AUTH_ENABLED: "true"
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      # Remote MCP at /mcp, which takes an API key or a personal access token.
+      MCP_ENABLED: ${MCP_ENABLED:-true}
+      # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
+      PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     volumes:
       - ${DC_SSO_VOLUME:-./data/sso}:/etc/currents/sso:ro
@@ -72,6 +84,16 @@ services:
       CURRENTS_ENV: onprem
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
+      PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       mongodb:
@@ -92,6 +114,16 @@ services:
       CURRENTS_ENV: onprem
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
+      # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
+      PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       clickhouse:
@@ -302,9 +334,64 @@ services:
       AWS_ACCESS_KEY_ID: ${RUSTFS_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${RUSTFS_SECRET_KEY}
       AWS_DEFAULT_REGION: us-east-1
-    entrypoint: >
-      sh -c "aws --endpoint-url=http://rustfs:9000 s3 mb s3://currents || true"
-
+      AWS_ENDPOINT_URL: http://rustfs:9000
+      ARTIFACT_BUCKET: ${FILE_STORAGE_BUCKET:-currents}
+      APP_CONTENT_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-currents-app-content}
+      DELETE_ARTIFACTS_AFTER_DAYS: ${DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS:-}
+    # The app-content rules expire share markdown a day after its link and trace
+    # links after their longest lifetime. Never bucket-wide: the same bucket keeps
+    # organization logos and session files for good. Each run rewrites the rules
+    # this init owns, matched by ID, and keeps any other rules on the buckets.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        for bucket in "$$ARTIFACT_BUCKET" "$$APP_CONTENT_BUCKET"; do
+          # A create that loses a race to another init finds the bucket there.
+          aws s3api head-bucket --bucket "$$bucket" 2>/dev/null ||
+            aws s3 mb "s3://$$bucket" ||
+            aws s3api head-bucket --bucket "$$bucket"
+        done
+        # The bucket's rules whose ID is not in $$2, as JSON. Any error other than
+        # an absent configuration stops the init rather than dropping those rules.
+        other_rules() {
+          filter=""
+          for id in $$2; do filter="$${filter:+$$filter && }ID!='$$id'"; done
+          if out=$$(aws s3api get-bucket-lifecycle-configuration --bucket "$$1" --query "Rules[?$$filter]" --output json 2>&1); then
+            echo "$$out"
+          else
+            case "$$out" in
+              *NoSuchLifecycleConfiguration*) echo "[]" ;;
+              *) echo "$$out" >&2; return 1 ;;
+            esac
+          fi
+        }
+        # Sets bucket $$1's rules to its other rules plus $$3 (comma-separated rule
+        # objects, or empty), deleting the configuration when none are left.
+        put_rules() {
+          others=$$(other_rules "$$1" "$$2")
+          rules=$$(printf '%s' "$$others" | tr -d '\n' | sed 's/^ *\[ *//; s/ *\] *$$//')
+          if [ -n "$$rules" ] && [ -n "$$3" ]; then rules="$$rules, $$3"; else rules="$$rules$$3"; fi
+          if [ -n "$$rules" ]; then
+            aws s3api put-bucket-lifecycle-configuration --bucket "$$1" --lifecycle-configuration "{ \"Rules\": [$$rules] }"
+          else
+            aws s3api delete-bucket-lifecycle --bucket "$$1"
+          fi
+        }
+        put_rules "$$APP_CONTENT_BUCKET" "ai-context-share share-3d share-7d trace-links" '
+          { "ID": "ai-context-share", "Status": "Enabled", "Filter": { "Prefix": "ai-context-share/" }, "Expiration": { "Days": 2 } },
+          { "ID": "share-3d", "Status": "Enabled", "Filter": { "Prefix": "share-3d/" }, "Expiration": { "Days": 4 } },
+          { "ID": "share-7d", "Status": "Enabled", "Filter": { "Prefix": "share-7d/" }, "Expiration": { "Days": 8 } },
+          { "ID": "trace-links", "Status": "Enabled", "Filter": { "Prefix": "trace-links/" }, "Expiration": { "Days": 8 } }'
+        artifact_rule=""
+        if [ -n "$$DELETE_ARTIFACTS_AFTER_DAYS" ]; then
+          case "$$DELETE_ARTIFACTS_AFTER_DAYS" in
+            *[!0-9]* | 0*) echo "DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS must be a whole number of days above 0" >&2; exit 1 ;;
+          esac
+          artifact_rule="{ \"ID\": \"delete-artifacts-after-days\", \"Status\": \"Enabled\", \"Filter\": { \"Prefix\": \"\" }, \"Expiration\": { \"Days\": $$DELETE_ARTIFACTS_AFTER_DAYS } }"
+        fi
+        put_rules "$$ARTIFACT_BUCKET" "delete-artifacts-after-days" "$$artifact_rule"
     networks:
       - default
 networks:

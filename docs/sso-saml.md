@@ -74,12 +74,12 @@ Go to your dashboard and enter your email on the sign-in screen. If your email i
 |----------|---------|
 | `SSO_SAML_DEFAULT_ROLE` | Role for auto-provisioned SSO users. Default `member`. |
 | `SSO_ALLOWED_DOMAINS` | Comma-separated allow-list of email domains, e.g. `acme.com,acme.io`. Defense-in-depth on top of your IdP. |
-| `SSO_SAML_AUTHN_REQUESTS_SIGNED` | Set `true` to sign outbound AuthnRequests. Requires an SP key/cert (below). |
-| `SSO_SAML_SP_CERT_FILE` / `SSO_SAML_SP_KEY_FILE` | Paths to your SP certificate/private key PEMs (place them in `./data/sso` too). Only needed for signed requests. |
+| `SSO_SAML_AUTHN_REQUESTS_SIGNED` | Set `true` to sign outbound AuthnRequests. Requires an SP key (below). |
+| `SSO_SAML_SP_KEY_FILE` | Path to your SP private key PEM (place it in `./data/sso` too). Only needed for signed requests. |
 
 ### Signing AuthnRequests (advanced)
 
-If your IdP requires signed requests, generate a self-signed SP keypair, drop it in `./data/sso`, and point the vars at it:
+If your IdP requires signed requests, generate a self-signed SP keypair in `./data/sso`, upload `sp-cert.pem` to your IdP so it can verify the signatures, and point Currents at the key:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes \
@@ -89,7 +89,6 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 
 ```bash
 SSO_SAML_AUTHN_REQUESTS_SIGNED=true
-SSO_SAML_SP_CERT_FILE=/etc/currents/sso/sp-cert.pem
 SSO_SAML_SP_KEY_FILE=/etc/currents/sso/sp-key.pem
 ```
 
