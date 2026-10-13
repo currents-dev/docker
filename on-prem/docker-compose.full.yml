@@ -53,18 +53,15 @@ services:
       EMAIL_TRANSPORTER: smtp
       # Remote MCP at /mcp, which takes an API key or a personal access token.
       MCP_ENABLED: ${MCP_ENABLED:-true}
-      # The API verifies OAuth access tokens against its own signing keys. The
-      # default URL is on APP_BASE_URL, which the container may not resolve
-      # (*.localhost) or reach without going out through the proxy.
-      OAUTH_JWKS_URL: ${OAUTH_JWKS_URL:-http://localhost:4000/api/auth/jwks}
       # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
-      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*.
-      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-}
-      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-}
-      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-}
-      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-}
-      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-}
-      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-}
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
       PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     volumes:
@@ -88,13 +85,14 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
       # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
-      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*.
-      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-}
-      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-}
-      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-}
-      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-}
-      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-}
-      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-}
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
       PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
@@ -117,13 +115,14 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       EMAIL_TRANSPORTER: smtp
       # The app-content bucket (shares, logos, session files). APP_CONTENT_STORAGE_*
-      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*.
-      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-}
-      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-}
-      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-}
-      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-}
-      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-}
-      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-}
+      # in .env is the operator-facing name; the services read PERMANENT_STORAGE_*,
+      # which .env may also set directly.
+      PERMANENT_STORAGE_ENDPOINT: ${APP_CONTENT_STORAGE_ENDPOINT:-${PERMANENT_STORAGE_ENDPOINT:-}}
+      PERMANENT_STORAGE_INTERNAL_ENDPOINT: ${APP_CONTENT_STORAGE_INTERNAL_ENDPOINT:-${PERMANENT_STORAGE_INTERNAL_ENDPOINT:-}}
+      PERMANENT_STORAGE_BUCKET: ${APP_CONTENT_STORAGE_BUCKET:-${PERMANENT_STORAGE_BUCKET:-}}
+      PERMANENT_STORAGE_REGION: ${APP_CONTENT_STORAGE_REGION:-${PERMANENT_STORAGE_REGION:-}}
+      PERMANENT_STORAGE_ACCESS_KEY_ID: ${APP_CONTENT_STORAGE_ACCESS_KEY_ID:-${PERMANENT_STORAGE_ACCESS_KEY_ID:-}}
+      PERMANENT_STORAGE_SECRET_ACCESS_KEY: ${APP_CONTENT_STORAGE_SECRET_ACCESS_KEY:-${PERMANENT_STORAGE_SECRET_ACCESS_KEY:-}}
       PERMANENT_STORAGE_FORCE_PATH_STYLE: "true"
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
@@ -341,8 +340,8 @@ services:
       DELETE_ARTIFACTS_AFTER_DAYS: ${DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS:-}
     # The app-content rules expire share markdown a day after its link and trace
     # links after their longest lifetime. Never bucket-wide: the same bucket keeps
-    # organization logos and session files for good. This init owns both buckets'
-    # lifecycle configuration and replaces it on every run.
+    # organization logos and session files for good. Each run rewrites the rules
+    # this init owns, matched by ID, and keeps any other rules on the buckets.
     entrypoint:
       - sh
       - -c
@@ -354,24 +353,45 @@ services:
             aws s3 mb "s3://$$bucket" ||
             aws s3api head-bucket --bucket "$$bucket"
         done
-        aws s3api put-bucket-lifecycle-configuration --bucket "$$APP_CONTENT_BUCKET" --lifecycle-configuration '{
-          "Rules": [
-            { "ID": "ai-context-share", "Status": "Enabled", "Filter": { "Prefix": "ai-context-share/" }, "Expiration": { "Days": 2 } },
-            { "ID": "share-3d", "Status": "Enabled", "Filter": { "Prefix": "share-3d/" }, "Expiration": { "Days": 4 } },
-            { "ID": "share-7d", "Status": "Enabled", "Filter": { "Prefix": "share-7d/" }, "Expiration": { "Days": 8 } },
-            { "ID": "trace-links", "Status": "Enabled", "Filter": { "Prefix": "trace-links/" }, "Expiration": { "Days": 8 } }
-          ]
-        }'
+        # The bucket's rules whose ID is not in $$2, as JSON. Any error other than
+        # an absent configuration stops the init rather than dropping those rules.
+        other_rules() {
+          filter=""
+          for id in $$2; do filter="$${filter:+$$filter && }ID!='$$id'"; done
+          if out=$$(aws s3api get-bucket-lifecycle-configuration --bucket "$$1" --query "Rules[?$$filter]" --output json 2>&1); then
+            echo "$$out"
+          else
+            case "$$out" in
+              *NoSuchLifecycleConfiguration*) echo "[]" ;;
+              *) echo "$$out" >&2; return 1 ;;
+            esac
+          fi
+        }
+        # Sets bucket $$1's rules to its other rules plus $$3 (comma-separated rule
+        # objects, or empty), deleting the configuration when none are left.
+        put_rules() {
+          others=$$(other_rules "$$1" "$$2")
+          rules=$$(printf '%s' "$$others" | tr -d '\n' | sed 's/^ *\[ *//; s/ *\] *$$//')
+          if [ -n "$$rules" ] && [ -n "$$3" ]; then rules="$$rules, $$3"; else rules="$$rules$$3"; fi
+          if [ -n "$$rules" ]; then
+            aws s3api put-bucket-lifecycle-configuration --bucket "$$1" --lifecycle-configuration "{ \"Rules\": [$$rules] }"
+          else
+            aws s3api delete-bucket-lifecycle --bucket "$$1"
+          fi
+        }
+        put_rules "$$APP_CONTENT_BUCKET" "ai-context-share share-3d share-7d trace-links" '
+          { "ID": "ai-context-share", "Status": "Enabled", "Filter": { "Prefix": "ai-context-share/" }, "Expiration": { "Days": 2 } },
+          { "ID": "share-3d", "Status": "Enabled", "Filter": { "Prefix": "share-3d/" }, "Expiration": { "Days": 4 } },
+          { "ID": "share-7d", "Status": "Enabled", "Filter": { "Prefix": "share-7d/" }, "Expiration": { "Days": 8 } },
+          { "ID": "trace-links", "Status": "Enabled", "Filter": { "Prefix": "trace-links/" }, "Expiration": { "Days": 8 } }'
+        artifact_rule=""
         if [ -n "$$DELETE_ARTIFACTS_AFTER_DAYS" ]; then
           case "$$DELETE_ARTIFACTS_AFTER_DAYS" in
             *[!0-9]* | 0*) echo "DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS must be a whole number of days above 0" >&2; exit 1 ;;
           esac
-          aws s3api put-bucket-lifecycle-configuration --bucket "$$ARTIFACT_BUCKET" --lifecycle-configuration "{
-            \"Rules\": [{ \"ID\": \"delete-artifacts-after-days\", \"Status\": \"Enabled\", \"Filter\": { \"Prefix\": \"\" }, \"Expiration\": { \"Days\": $$DELETE_ARTIFACTS_AFTER_DAYS } }]
-          }"
-        else
-          aws s3api delete-bucket-lifecycle --bucket "$$ARTIFACT_BUCKET"
+          artifact_rule="{ \"ID\": \"delete-artifacts-after-days\", \"Status\": \"Enabled\", \"Filter\": { \"Prefix\": \"\" }, \"Expiration\": { \"Days\": $$DELETE_ARTIFACTS_AFTER_DAYS } }"
         fi
+        put_rules "$$ARTIFACT_BUCKET" "delete-artifacts-after-days" "$$artifact_rule"
     networks:
       - default
 networks:

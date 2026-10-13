@@ -78,7 +78,7 @@ APP_BASE_URL=http://localhost:4000
 CURRENTS_RECORD_API_URL=http://localhost:1234
 ```
 
-The OAuth provider for remote MCP, on in `.env.example`, needs `https` or `localhost`. With an `http` `APP_BASE_URL` on any other host, set `OAUTH_PROVIDER_ENABLED=false`, or the API refuses to start. To evaluate OAuth without TLS on a name other than `localhost`, use a `.localhost` name such as `http://currents.localhost:4000` and set `OAUTH_HTTP_ALLOWED_HOSTS=currents.localhost`.
+The OAuth provider for remote MCP, on in `.env.example`, needs `https` or `localhost`. With an `http` `APP_BASE_URL` on any other host, set `OAUTH_PROVIDER_ENABLED=false`, or the API refuses to start. To evaluate OAuth without TLS on a name other than `localhost`, use a `.localhost` name such as `http://currents.localhost:4000`, and set `OAUTH_HTTP_ALLOWED_HOSTS=currents.localhost` and `OAUTH_JWKS_URL=http://localhost:4000/api/auth/jwks`.
 
 ### Root User Account
 
