@@ -1,6 +1,6 @@
-# Use AWS S3 for Artifact Storage
+# Use AWS S3 for Object Storage
 
-Currents stores test artifacts (screenshots, videos, Playwright traces, stdout and attachments) in an S3-compatible bucket. This page covers the bucket permissions and CORS rules Currents needs when you use AWS S3 instead of the included RustFS service.
+Currents stores test artifacts (screenshots, videos, Playwright traces, stdout and attachments) in an S3-compatible bucket, and context shares, organization logos and session files in a second one, the [app content bucket](#app-content-bucket). This page covers the bucket permissions, CORS and lifecycle rules Currents needs when you use AWS S3 instead of the included RustFS service.
 
 ## How Artifacts Reach the Bucket
 
@@ -91,6 +91,52 @@ aws s3api put-bucket-cors --bucket currents-artifacts --cors-configuration '{
 ```
 
 Uploads come from the CI reporter and from Currents services rather than a browser, so they don't need a CORS rule.
+
+## App Content Bucket
+
+Context shares, organization logos and session files go to a separate bucket, configured with the `APP_CONTENT_STORAGE_*` variables. Without it, context sharing and logo editing are off and uploading session files answers `503`.
+
+```bash
+APP_CONTENT_STORAGE_ENDPOINT=https://s3.us-east-1.amazonaws.com
+APP_CONTENT_STORAGE_INTERNAL_ENDPOINT=https://s3.us-east-1.amazonaws.com
+APP_CONTENT_STORAGE_REGION=us-east-1
+APP_CONTENT_STORAGE_BUCKET=currents-app-content
+APP_CONTENT_STORAGE_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+APP_CONTENT_STORAGE_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+The same rules as the artifact bucket apply, with these differences:
+
+- **IAM policy:** the [policy above](#iam-policy) on the app content bucket, plus `s3:DeleteObject` on its objects. Deleting a session or organization removes its files.
+- **CORS:** add `PUT` to `AllowedMethods`. Admins upload the organization logo from the browser. trace.playwright.dev is not needed.
+- **Lifecycle rules:** shares expire, but nothing deletes their objects. Add these rules, and scope them to these prefixes only: the bucket also holds logos (`<orgId>/logo/`) and session files (`<orgId>/sessions/`), and a bucket-wide rule deletes them.
+
+```bash
+aws s3api put-bucket-lifecycle-configuration --bucket currents-app-content --lifecycle-configuration '{
+  "Rules": [
+    { "ID": "ai-context-share", "Status": "Enabled", "Filter": { "Prefix": "ai-context-share/" }, "Expiration": { "Days": 2 } },
+    { "ID": "share-3d", "Status": "Enabled", "Filter": { "Prefix": "share-3d/" }, "Expiration": { "Days": 4 } },
+    { "ID": "share-7d", "Status": "Enabled", "Filter": { "Prefix": "share-7d/" }, "Expiration": { "Days": 8 } },
+    { "ID": "trace-links", "Status": "Enabled", "Filter": { "Prefix": "trace-links/" }, "Expiration": { "Days": 8 } }
+  ]
+}'
+```
+
+Each rule outlives the longest share written under its prefix by a day. The included RustFS service gets these rules from `rustfs-init`.
+
+## Artifact Expiry
+
+Currents does not delete artifacts. To limit how long they are kept, add a lifecycle rule to the artifact bucket. Replace `30` with the number of days and `currents-artifacts` with your bucket name:
+
+```bash
+aws s3api put-bucket-lifecycle-configuration --bucket currents-artifacts --lifecycle-configuration '{
+  "Rules": [
+    { "ID": "delete-artifacts-after-days", "Status": "Enabled", "Filter": { "Prefix": "" }, "Expiration": { "Days": 30 } }
+  ]
+}'
+```
+
+Runs older than that still show in the dashboard, without their screenshots, videos, traces and stdout. With the included RustFS service, set `DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS` instead.
 
 ## Troubleshooting 403 Errors
 

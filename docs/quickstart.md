@@ -78,6 +78,8 @@ APP_BASE_URL=http://localhost:4000
 CURRENTS_RECORD_API_URL=http://localhost:1234
 ```
 
+The OAuth provider for remote MCP, on in `.env.example`, needs `https` or `localhost`. With an `http` `APP_BASE_URL` on any other host, set `OAUTH_PROVIDER_ENABLED=false`, or the API refuses to start. To evaluate OAuth without TLS on a name other than `localhost`, use a `.localhost` name such as `http://currents.localhost:4000` and set `OAUTH_HTTP_ALLOWED_HOSTS=currents.localhost`.
+
 ### Root User Account
 
 The `ON_PREM_EMAIL` is the email address used to create the initial root admin user:
@@ -108,9 +110,11 @@ FILE_STORAGE_REGION=us-east-1
 # FILE_STORAGE_FORCE_PATH_STYLE=true
 ```
 
-For AWS S3, also set `FILE_STORAGE_INTERNAL_ENDPOINT` to the same endpoint, and give the bucket the IAM policy and CORS rules in [Use AWS S3 for Artifact Storage](./object-storage.md).
+For AWS S3, also set `FILE_STORAGE_INTERNAL_ENDPOINT` to the same endpoint, and give the bucket the IAM policy and CORS rules in [Use AWS S3 for Object Storage](./object-storage.md).
 
-If using the included RustFS for testing, configure the `RUSTFS_*` variables instead. The RustFS profile automatically sets `FILE_STORAGE_FORCE_PATH_STYLE=true` for all services.
+Context shares, organization logos and session files need a second bucket, set with the `APP_CONTENT_STORAGE_*` variables. `.env.example` reuses the artifact storage endpoint and credentials for it. Create the bucket and add the lifecycle rules in [App Content Bucket](./object-storage.md#app-content-bucket).
+
+If using the included RustFS for testing, configure the `RUSTFS_*` variables instead. The RustFS profile automatically sets `FILE_STORAGE_FORCE_PATH_STYLE=true` and `APP_CONTENT_STORAGE_FORCE_PATH_STYLE=true` for all services, and creates both buckets.
 
 > ⚠️ **Production Note:** RustFS is intended for local development and testing only—it is **not recommended for production deployments**. The included Docker Compose configuration is designed for local development; production environments should use external, production-grade object storage backends such as AWS S3, Google Cloud Storage, or a managed MinIO cluster.
 
