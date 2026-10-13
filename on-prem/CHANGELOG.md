@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
 - The `rustfs` service sets `RUSTFS_CORS_ALLOWED_ORIGINS: "*"`. `1.0.1` sends no CORS headers without it, which breaks trace.playwright.dev and the dashboard's stdout and attachment previews. If you run `1.0.1` from your own compose file, add it there too.
 - The `api`, `changestreams-worker` and `write-worker` services read the app content bucket from `APP_CONTENT_STORAGE_*`, and `api` sets `MCP_ENABLED` (requires `./scripts/generate-compose.sh` if using custom templates)
-- `rustfs-init` creates the app content bucket beside the artifact bucket and replaces both buckets' lifecycle configuration on every run
+- `rustfs-init` creates the app content bucket beside the artifact bucket and adds its lifecycle rules. Each run rewrites only the rules it owns, matched by ID (`ai-context-share`, `share-3d`, `share-7d`, `trace-links`, `delete-artifacts-after-days`), and keeps any others
 
 ### New Environment Variables
 - `APP_CONTENT_STORAGE_ENDPOINT`, `APP_CONTENT_STORAGE_BUCKET`, `APP_CONTENT_STORAGE_ACCESS_KEY_ID`, `APP_CONTENT_STORAGE_SECRET_ACCESS_KEY`, `APP_CONTENT_STORAGE_REGION`, `APP_CONTENT_STORAGE_INTERNAL_ENDPOINT`, `APP_CONTENT_STORAGE_FORCE_PATH_STYLE` — the app content bucket for context shares, organization logos and session files. Without it, context sharing and logo editing are off and uploading session files answers `503`. Copy the block from `.env.example`; on your own storage, create the bucket and add the lifecycle rules in [docs/object-storage.md](../docs/object-storage.md#app-content-bucket)

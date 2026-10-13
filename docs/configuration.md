@@ -89,7 +89,7 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 | `OAUTH_DYNAMIC_CLIENT_REGISTRATION_ENABLED` | bool | `true` in `.env.example` | Let clients register themselves, the way to add a client without internet access |
 | `OAUTH_CIMD_ENABLED` | bool | `true` | Accept clients identified by a client ID metadata document: an https URL the server fetches. Hosts resolving to private, loopback or link-local addresses are refused |
 | `OAUTH_HTTP_ALLOWED_HOSTS` | string | _(empty)_ | For an evaluation without TLS: a `.localhost` name (e.g. `currents.localhost`) the OAuth endpoints may serve over `http`. Browsers resolve `.localhost` names to this machine. Another `http` host starts, but OAuth clients are sent to an `https` issuer the install does not serve |
-| `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected |
+| `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
 
 ### SAML SSO (Optional)
 
