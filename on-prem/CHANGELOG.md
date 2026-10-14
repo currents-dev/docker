@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Upgrade Notes
-- The scheduler runs this release's database migrations when it starts, which can take several minutes on a large dataset. Check that `docker compose logs scheduler` shows `Startup tasks complete`. If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped and an interrupted backfill continues from where it stopped.
+- The scheduler runs this release's database migrations when it starts, which can take several minutes on a large dataset. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
 
 ### Compose File Changes
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)

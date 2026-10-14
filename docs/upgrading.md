@@ -151,16 +151,18 @@ The service will retry connecting to its dependencies once they're fully ready.
 Some upgrades may require database migrations. The scheduler service runs migrations automatically on startup and logs `Startup tasks complete` when they finish. Check scheduler logs:
 
 ```bash
-docker compose logs scheduler
+docker compose logs scheduler | grep -E 'Running startup tasks|Startup tasks complete|"level":50'
 ```
 
-If a migration fails, for example with a ClickHouse `Timeout error.` on a busy host, the scheduler logs the error and keeps running, but the remaining migrations don't run until it starts again. Restart it:
+The last `Running startup tasks...` line should be followed by `Startup tasks complete`. `docker compose restart` keeps the logs of earlier starts, so a `Startup tasks complete` line before it doesn't count.
+
+If a migration fails, for example with a ClickHouse `Timeout error.` on a busy host, the scheduler logs the error (`"level":50`) and keeps running, but the remaining migrations don't run until it starts again. Restart it:
 
 ```bash
 docker compose restart scheduler
 ```
 
-Finished migrations are skipped, and an interrupted backfill continues from where it stopped.
+Finished migrations are skipped, and an interrupted backfill skips the records it already updated, so a restart is safe to repeat.
 
 ### Missing environment variables
 
