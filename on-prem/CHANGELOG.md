@@ -24,6 +24,7 @@ Feature release: remote MCP with sign-in through an OAuth provider, context shar
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
 - The `rustfs` service sets `RUSTFS_CORS_ALLOWED_ORIGINS: "*"`. `1.0.1` sends no CORS headers without it, which breaks trace.playwright.dev and the dashboard's stdout and attachment previews. If you run `1.0.1` from your own compose file, add it there too.
 - The `api`, `changestreams-worker` and `write-worker` services read the app content bucket from `APP_CONTENT_STORAGE_*`, and `api` sets `MCP_ENABLED` (requires `./scripts/generate-compose.sh` if using custom templates)
+- `rustfs-data-init` runs before `rustfs` and makes uid `10001` the owner of its data directory (requires `./scripts/generate-compose.sh` if using custom templates)
 - `rustfs-init` creates the app content bucket beside the artifact bucket and adds its lifecycle rules. Each run rewrites only the rules it owns, matched by ID (`ai-context-share`, `share-3d`, `share-7d`, `trace-links`, `delete-artifacts-after-days`), and keeps any others
 
 ### New Environment Variables
@@ -52,6 +53,7 @@ Feature release: remote MCP with sign-in through an OAuth provider, context shar
 - `SSO_SAML_SP_CERT_FILE` — the API never read it. Signed AuthnRequests need only `SSO_SAML_SP_KEY_FILE`; upload the certificate to your IdP.
 
 ### Fixed
+- On a fresh Linux install with the `full` profile, RustFS exited with `Permission denied`: Docker created `./data/rustfs` owned by root, and RustFS runs as uid `10001`.
 - Share links, MCP and the assistant pointed at `api.currents.dev` instead of the install's own API. `API_BASE_URL` now defaults to `APP_BASE_URL`.
 - The dashboard signed users out everywhere when sign-in requests hit the rate limit, and all users shared one limit. It now applies per client address, and `BETTER_AUTH_RATE_LIMIT_*` sets it.
 - Records of who did something showed a user ID instead of an email address.

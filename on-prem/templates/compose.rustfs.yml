@@ -22,11 +22,26 @@ services:
       - default
     volumes:
       - ${DC_RUSTFS_VOLUME:-./data/rustfs}:/data  # /data is RustFS's default storage location
+    depends_on:
+      rustfs-data-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:9000/health || exit 1']
       interval: 2s
       timeout: 5s
       retries: 10
+
+  # RustFS runs as uid 10001 and exits with "Permission denied" on a data
+  # directory it doesn't own. On Linux, Docker creates a missing bind-mount
+  # source as root. Same image, run as root, so nothing new to pull. Not
+  # recursive: RustFS owns everything it creates inside.
+  rustfs-data-init:
+    image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.1}
+    user: "0"
+    entrypoint: ["chown", "10001:10001", "/data"]
+    volumes:
+      - ${DC_RUSTFS_VOLUME:-./data/rustfs}:/data
+    restart: "no"
 
   rustfs-init:
     image: ${DC_AWS_CLI_IMAGE:-amazon/aws-cli:2.32.31}
