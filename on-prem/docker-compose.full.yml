@@ -331,11 +331,19 @@ services:
   # RustFS runs as uid 10001 and exits with "Permission denied" on a data
   # directory it doesn't own. On Linux, Docker creates a missing bind-mount
   # source as root. Same image, run as root, so nothing new to pull. Not
-  # recursive: RustFS owns everything it creates inside.
+  # recursive: RustFS owns everything it creates inside. It always exits 0:
+  # chown fails on a root-squashed NFS or CIFS mount whose owner is already
+  # right, and a failed init would keep RustFS from starting at all.
   rustfs-data-init:
     image: ${DC_RUSTFS_IMAGE:-rustfs/rustfs:1.0.1}
     user: "0"
-    entrypoint: ["chown", "10001:10001", "/data"]
+    entrypoint:
+      - sh
+      - -c
+      - |
+        [ "$$(stat -c %u /data)" = 10001 ] && exit 0
+        chown 10001:10001 /data || echo "rustfs-data-init: could not chown /data; RustFS needs uid 10001 to write it"
+        exit 0
     volumes:
       - ${DC_RUSTFS_VOLUME:-./data/rustfs}:/data
     restart: "no"
