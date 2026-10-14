@@ -14,7 +14,7 @@ SSO turns on automatically once the two required variables are set and the IdP m
 
 You'll reuse these in both your IdP and your `.env`:
 
-- **Provider id** (`SSO_SAML_PROVIDER_ID`) — set it to your IdP's service name, e.g. `okta`. It becomes the last path segment of the callback URL.
+- **Provider id** (`SSO_SAML_PROVIDER_ID`) — set it to your IdP's service name, e.g. `okta`. It becomes the last path segment of the ACS URL.
 - **Issuer** (`SSO_SAML_ISSUER`) — a **stable, opaque** identifier that names this deployment as a SAML Service Provider. Use the form `currents-onprem:<your-org>`, e.g. `currents-onprem:acme`.
 
 > ⚠️ **The issuer is not a URL.** Use a stable string like `currents-onprem:acme`. It only has to match the "Audience / SP Entity ID" you enter in your IdP — it does not need to resolve, and using your deployment URL is discouraged because that URL can change.
@@ -25,12 +25,15 @@ Create a new **SAML 2.0** application. Using Okta as the example, set:
 
 | IdP field | Value |
 |-----------|-------|
-| **Single Sign-On URL** (a.k.a. ACS / Assertion Consumer Service URL) | `<APP_BASE_URL>/api/auth/sso/saml2/callback/okta` |
+| **Single Sign-On URL** (a.k.a. ACS / Assertion Consumer Service URL) | `<APP_BASE_URL>/api/auth/sso/saml2/sp/acs/okta` |
+| **Recipient URL** and **Destination URL** | The Single Sign-On URL. In Okta, leave "Use this for Recipient URL and Destination URL" checked (the default) |
 | **Audience URI** (a.k.a. SP Entity ID) | `currents-onprem:acme` |
 | **Name ID format** | `Persistent` |
 | **Application username** | Email |
 
 Replace `<APP_BASE_URL>` with your deployment's base URL (the value of `APP_BASE_URL` in your `.env`, e.g. `https://currents.acme.com`), `okta` with your `SSO_SAML_PROVIDER_ID`, and `currents-onprem:acme` with your `SSO_SAML_ISSUER`.
+
+Currents rejects an assertion whose Recipient or Destination is any URL other than the Single Sign-On URL.
 
 Then **download the application's IdP metadata XML** (in Okta: the app's *Metadata URL*, or *SAML Setup Instructions → Identity Provider metadata*). This one file contains the IdP sign-on URL, entity ID, and signing certificate — Currents reads all of them from it.
 
@@ -68,6 +71,8 @@ Go to your dashboard and enter your email on the sign-in screen. If your email i
 
 > New SSO users are added to your single on-prem organization automatically, with the role set by `SSO_SAML_DEFAULT_ROLE` (default `member`). The root admin account continues to sign in with its email + password.
 
+Once SSO is on, Currents serves its SP metadata at `<APP_BASE_URL>/api/auth/sso/saml2/sp/metadata?providerId=okta` (with your `SSO_SAML_PROVIDER_ID`), for IdPs that import it.
+
 ## Optional configuration
 
 | Variable | Purpose |
@@ -76,6 +81,7 @@ Go to your dashboard and enter your email on the sign-in screen. If your email i
 | `SSO_ALLOWED_DOMAINS` | Comma-separated allow-list of email domains, e.g. `acme.com,acme.io`. Defense-in-depth on top of your IdP. |
 | `SSO_SAML_AUTHN_REQUESTS_SIGNED` | Set `true` to sign outbound AuthnRequests. Requires an SP key (below). |
 | `SSO_SAML_SP_KEY_FILE` | Path to your SP private key PEM (place it in `./data/sso` too). Only needed for signed requests. |
+| `SSO_SAML_ALLOW_IDP_INITIATED` | Set `true` to accept sign-ins started from the IdP's app dashboard (an Okta tile, the Entra My Apps portal). Off by default: Currents can't match such a sign-in to a request of its own, so it refuses it and users start from the Currents sign-in page. |
 
 ### Signing AuthnRequests (advanced)
 
@@ -101,5 +107,7 @@ The metadata file is the single source for the IdP sign-on URL, entity ID, and s
 - **Sign-in isn't redirecting to the IdP** — confirm both `SSO_SAML_IDP_METADATA_FILE` and `SSO_SAML_ISSUER` are set and the file exists at the mounted path; SSO is off until both are present. Check the API logs at startup for SSO config validation errors.
 - **IdP rejects the request / "audience mismatch"** — the **Audience / SP Entity ID** in your IdP must exactly equal `SSO_SAML_ISSUER`.
 - **Assertion signature invalid** — the metadata XML is stale or from the wrong app; re-download it from the IdP and replace the file.
+- **"Recipient does not match" or "Destination does not match"** — the Recipient or Destination URL in your IdP is not the Single Sign-On URL above. Set both to it.
+- **Sign-in from the IdP's app dashboard fails, sign-in from Currents works** — set `SSO_SAML_ALLOW_IDP_INITIATED=true`, or have users start from the Currents sign-in page.
 
 See the [Configuration Reference](./configuration.md#saml-sso-optional) for the full list of SSO variables.

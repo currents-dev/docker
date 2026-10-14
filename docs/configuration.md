@@ -99,11 +99,12 @@ Enable SAML single sign-on by setting the two required variables and mounting yo
 |----------|------|---------|-------------|
 | `SSO_SAML_IDP_METADATA_FILE` | string | _(empty)_ | Path to the mounted IdP metadata XML (e.g. `/etc/currents/sso/idp-metadata.xml`). **Required to enable SSO.** |
 | `SSO_SAML_ISSUER` | string | _(empty)_ | SP entityID / audience — a stable opaque identifier (e.g. `currents-onprem:your-org`). Must match the Audience / SP Entity ID configured in your IdP. **Required to enable SSO.** |
-| `SSO_SAML_PROVIDER_ID` | string | `onprem-saml` | Provider id; recommend your IdP name (e.g. `okta`). Becomes the last path segment of the ACS callback URL. |
+| `SSO_SAML_PROVIDER_ID` | string | `onprem-saml` | Provider id; recommend your IdP name (e.g. `okta`). Becomes the last path segment of the ACS URL, `<APP_BASE_URL>/api/auth/sso/saml2/sp/acs/<provider id>`. |
 | `SSO_SAML_DEFAULT_ROLE` | string | `member` | Role granted to auto-provisioned SSO users |
 | `SSO_ALLOWED_DOMAINS` | string | _(empty)_ | Comma-separated email domains allowed to sign in via SSO |
 | `SSO_SAML_AUTHN_REQUESTS_SIGNED` | bool | `false` | Sign outbound AuthnRequests (requires the SP key below) |
 | `SSO_SAML_SP_KEY_FILE` | string | _(empty)_ | Path to the mounted SP private key PEM (only when signing requests) |
+| `SSO_SAML_ALLOW_IDP_INITIATED` | bool | `false` | Accept sign-ins started from the IdP's app dashboard. Off, such a sign-in is refused and users start from the Currents sign-in page |
 
 ### Docker Compose Configuration
 
