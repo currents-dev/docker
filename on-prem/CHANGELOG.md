@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Breaking Changes
+- **SAML SSO: the ACS URL moves** from `<APP_BASE_URL>/api/auth/sso/saml2/callback/<provider id>` to `<APP_BASE_URL>/api/auth/sso/saml2/sp/acs/<provider id>`. The old path answers `404`, so SSO sign-in fails until your IdP sends assertions to the new one. The root admin's email and password sign-in is unaffected. Schedule the IdP change for the upgrade window:
+  1. In the IdP's SAML app, set the Single Sign-On / ACS URL (Entra ID: Reply URL) to the new URL. Set the Recipient and Destination URLs to it too; Okta does this by default. Currents rejects an assertion whose Recipient or Destination is any other URL.
+  2. Keep the Audience / SP Entity ID. It must still equal `SSO_SAML_ISSUER`, which doesn't change.
+  3. Sign in from the Currents sign-in page to confirm.
+- **SAML SSO: sign-ins started from the IdP's app dashboard** (an Okta tile, the Entra My Apps portal) are refused unless `SSO_SAML_ALLOW_IDP_INITIATED=true`. Sign-ins started from the Currents sign-in page work either way.
+
 ### Upgrade Notes
 - The scheduler runs this release's database migrations when it starts, which can take several minutes on a large dataset. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
 
@@ -20,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `MCP_ENABLED` (default `true`), `MCP_ORIGINS` — remote MCP at `/mcp`
 - `OAUTH_PROVIDER_ENABLED`, `OAUTH_DYNAMIC_CLIENT_REGISTRATION_ENABLED`, `OAUTH_CIMD_ENABLED`, `OAUTH_HTTP_ALLOWED_HOSTS`, `OAUTH_JWKS_URL` — sign-in to remote MCP with a Currents account. `.env.example` turns the provider on; an upgraded `.env` without `OAUTH_PROVIDER_ENABLED=true` keeps it off. It needs an `https` `APP_BASE_URL`, or `http` on `localhost` (or, for an evaluation, a `.localhost` name in `OAUTH_HTTP_ALLOWED_HOSTS`, with `OAUTH_JWKS_URL` on `localhost`): with `http` on any other host the API refuses to start, so set `OAUTH_PROVIDER_ENABLED=false`
 - `API_BASE_URL` — public API origin, default `APP_BASE_URL`
+- `SSO_SAML_ALLOW_IDP_INITIATED` — accept SAML sign-ins started from the IdP's app dashboard. Default `false`
 - `DC_RUSTFS_DELETE_ARTIFACTS_AFTER_DAYS` — delete artifacts in the bundled RustFS after this many days. Unset keeps them
 
 ### Changed Environment Variables
