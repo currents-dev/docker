@@ -76,6 +76,8 @@ Less commonly changed settings with sensible defaults.
 | `INVITE_EMAIL_BCC` | string | _(empty)_ | BCC address for invitation emails |
 | `INVITE_EXPIRATION_DAYS` | int | `14` | Number of days before invitations expire |
 | `EMAIL_LINKS_BASE_URL` | string | `${APP_BASE_URL}` | Base URL for links in emails (derived from APP_BASE_URL) |
+| `BETTER_AUTH_RATE_LIMIT_MAX` | int | `100` | Requests to `/api/auth/*` per client address per window. The dashboard reads the session on every page load, so a team behind one NAT or proxy shares one budget, and past it pages load with no data |
+| `BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` | int | `10` | The window for `BETTER_AUTH_RATE_LIMIT_MAX` |
 
 ### Remote MCP and OAuth
 
@@ -90,6 +92,7 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 | `OAUTH_CIMD_ENABLED` | bool | `true` | Accept clients identified by a client ID metadata document: an https URL the server fetches. Hosts resolving to private, loopback or link-local addresses are refused |
 | `OAUTH_HTTP_ALLOWED_HOSTS` | string | _(empty)_ | For an evaluation without TLS: a `.localhost` name (e.g. `currents.localhost`) the OAuth endpoints may serve over `http`. Browsers resolve `.localhost` names to this machine. Another `http` host starts, but OAuth clients are sent to an `https` issuer the install does not serve |
 | `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
+| `OAUTH_RATE_LIMIT_REGISTER_MAX`, `OAUTH_RATE_LIMIT_TOKEN_MAX`, `OAUTH_RATE_LIMIT_AUTHORIZE_MAX`, `OAUTH_RATE_LIMIT_USERINFO_MAX` | int | `5`, `20`, `30`, `60` | OAuth requests per client address per 60 seconds, on top of `BETTER_AUTH_RATE_LIMIT_MAX` |
 
 ### SAML SSO (Optional)
 
