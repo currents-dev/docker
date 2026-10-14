@@ -71,7 +71,7 @@ Go to your dashboard and enter your email on the sign-in screen. If your email i
 
 > New SSO users are added to your single on-prem organization automatically, with the role set by `SSO_SAML_DEFAULT_ROLE` (default `member`). The root admin account continues to sign in with its email + password.
 
-Once SSO is on, Currents serves its SP metadata at `<APP_BASE_URL>/api/auth/sso/saml2/sp/metadata?providerId=okta`, for IdPs that import it.
+Once SSO is on, Currents serves its SP metadata at `<APP_BASE_URL>/api/auth/sso/saml2/sp/metadata?providerId=okta` (with your `SSO_SAML_PROVIDER_ID`), for IdPs that import it.
 
 ## Optional configuration
 
