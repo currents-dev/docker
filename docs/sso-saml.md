@@ -26,7 +26,7 @@ Create a new **SAML 2.0** application. Using Okta as the example, set:
 | IdP field | Value |
 |-----------|-------|
 | **Single Sign-On URL** (a.k.a. ACS / Assertion Consumer Service URL) | `<APP_BASE_URL>/api/auth/sso/saml2/sp/acs/okta` |
-| **Recipient URL** and **Destination URL** | The Single Sign-On URL (Okta's default, "Use this for Recipient URL and Destination URL") |
+| **Recipient URL** and **Destination URL** | The Single Sign-On URL. In Okta, leave "Use this for Recipient URL and Destination URL" checked (the default) |
 | **Audience URI** (a.k.a. SP Entity ID) | `currents-onprem:acme` |
 | **Name ID format** | `Persistent` |
 | **Application username** | Email |

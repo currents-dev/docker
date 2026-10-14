@@ -8,13 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Breaking Changes
 - **SAML SSO: the ACS URL moves** from `<APP_BASE_URL>/api/auth/sso/saml2/callback/<provider id>` to `<APP_BASE_URL>/api/auth/sso/saml2/sp/acs/<provider id>`. The old path answers `404`, so SSO sign-in fails until your IdP sends assertions to the new one. The root admin's email and password sign-in is unaffected. Schedule the IdP change for the upgrade window:
-  1. In the IdP's SAML app, set the Single Sign-On / ACS URL (Entra ID: Reply URL) to the new URL. Set the Recipient and Destination URLs to it too; Okta does this by default. Currents rejects an assertion whose Recipient or Destination is any other URL.
+  1. In the IdP's SAML app, set the Single Sign-On / ACS URL (Entra ID: Reply URL) to the new URL. Set the Recipient and Destination URLs to the new URL as well. In Okta, leave "Use this for Recipient URL and Destination URL" checked (the default) and both follow the Single Sign-On URL. Currents rejects an assertion whose Recipient or Destination is any other URL.
   2. Keep the Audience / SP Entity ID. It must still equal `SSO_SAML_ISSUER`, which doesn't change.
   3. Sign in from the Currents sign-in page to confirm.
 - **SAML SSO: sign-ins started from the IdP's app dashboard** (an Okta tile, the Entra My Apps portal) are refused unless `SSO_SAML_ALLOW_IDP_INITIATED=true`. Sign-ins started from the Currents sign-in page work either way.
 
 ### Upgrade Notes
-- The scheduler runs this release's database migrations when it starts, which can take several minutes on a large dataset. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
+- The scheduler runs this release's database migrations when it starts, which can take several minutes on a large dataset. This is not downtime: the dashboard, API and run recording keep working. Until the migrations finish, filtering runs by status and searching by CI build ID can leave out runs recorded before the upgrade, and new results can take longer to process. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
 
 ### Compose File Changes
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
