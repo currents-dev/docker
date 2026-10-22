@@ -8,7 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [2026-10-14-002] - 2026-10-21
 
-Image-only update: no compose file or environment variable changes. Update `DC_CURRENTS_IMAGE_TAG`, then `docker compose pull && docker compose up -d`. If you are still on `2026-07-26-00x`, upgrade straight to this release; the Breaking Changes and Upgrade Notes of `2026-10-14-001` apply.
+Image-only update on `2026-10-14-001`: no compose file or environment variable changes.
+
+- **From `2026-10-14-001`:** update `DC_CURRENTS_IMAGE_TAG`, then `docker compose pull && docker compose up -d`.
+- **From `2026-07-26-00x`:** upgrade straight to this release, but with every step of `2026-10-14-001`, since this release keeps its compose files and `.env` settings:
+  - regenerate the compose file if you use custom templates (see its Compose File Changes);
+  - add its new `.env` block (see its New Environment Variables);
+  - follow its Breaking Changes and Upgrade Notes.
+
+  Without the `.env` block, context sharing and logo editing are off, session file uploads answer `503`, and remote MCP sign-in stays off.
 
 ### Fixed
 - After upgrading to `2026-10-14-001`, users who had signed in before the upgrade could not sign in again. SAML SSO returned to the sign-in page with `account_not_linked`, and the root admin's email and password sign-in answered `INVALID_EMAIL_OR_PASSWORD`. They sign in again with no change to the database. If you added an `issuer` field to the `account` documents by hand, leave it: nothing reads it.
