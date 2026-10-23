@@ -200,8 +200,11 @@ With the indexes already built, the upgrade only drops the two old `instances` i
    # Set DC_CURRENTS_IMAGE_TAG in your .env to the version in the VERSION file
    cat VERSION
 
-   # Only if you use a custom profile; a pre-generated profile is updated by git pull
-   ./scripts/generate-compose.sh <your-profile>
+   # Only if setup built a custom configuration; the full, database and cache
+   # files are updated by git pull. Pass the services in your compose file's
+   # name as separate words: for docker-compose.redis-mongodb.yml, run
+   # ./scripts/generate-compose.sh redis mongodb
+   ./scripts/generate-compose.sh <services>
 
    docker compose pull
    docker compose up -d
