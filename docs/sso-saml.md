@@ -30,10 +30,13 @@ Create a new **SAML 2.0** application. Using Okta as the example, set:
 | **Audience URI** (a.k.a. SP Entity ID) | `currents-onprem:acme` |
 | **Name ID format** | `Persistent` |
 | **Application username** | Email |
+| **Assertion Signature** (Sign On → Advanced Settings) | `Signed` |
 
 Replace `<APP_BASE_URL>` with your deployment's base URL (the value of `APP_BASE_URL` in your `.env`, e.g. `https://currents.acme.com`), `okta` with your `SSO_SAML_PROVIDER_ID`, and `currents-onprem:acme` with your `SSO_SAML_ISSUER`.
 
 Currents rejects an assertion whose Recipient or Destination is any URL other than the Single Sign-On URL.
+
+The assertion itself must be signed, not just the response around it. Currents refuses an unsigned `Assertion` with `SAML_ASSERTION_SIGNATURE_REQUIRED`, and there is no setting to turn this off.
 
 Then **download the application's IdP metadata XML** (in Okta: the app's *Metadata URL*, or *SAML Setup Instructions → Identity Provider metadata*). This one file contains the IdP sign-on URL, entity ID, and signing certificate — Currents reads all of them from it.
 

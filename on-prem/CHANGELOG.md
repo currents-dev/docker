@@ -42,9 +42,16 @@ Feature release: remote MCP with sign-in through an OAuth provider, context shar
   2. Keep the Audience / SP Entity ID. It must still equal `SSO_SAML_ISSUER`, which doesn't change.
   3. Sign in from the Currents sign-in page to confirm.
 - **SAML SSO: sign-ins started from the IdP's app dashboard** (an Okta tile, the Entra My Apps portal) are refused unless `SSO_SAML_ALLOW_IDP_INITIATED=true`. Sign-ins started from the Currents sign-in page work either way.
+- **SAML SSO: the assertion must be signed**, not just the response. An unsigned `Assertion` is refused with `SAML_ASSERTION_SIGNATURE_REQUIRED`. In Okta, set Assertion Signature to Signed under the app's Sign On → Advanced Settings.
 
 ### Upgrade Notes
-- The scheduler runs this release's database migrations when it starts. With 100,000 runs they took under a minute in testing: about 25 seconds to store each run's status in MongoDB and 10 seconds to re-insert every run into ClickHouse. Both scale with the number of runs, so expect several minutes for a million. This is not downtime: the dashboard, API and run recording keep working. Until the migrations finish, filtering runs by status can leave out runs recorded before the upgrade, and new results can take longer to process. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
+- Upgrade to `2026-10-14-002` or later: on this release, users who signed in before the upgrade can't sign in again.
+- **The scheduler builds new MongoDB indexes, then runs this release's migrations, when it starts.**
+  - On `instances` it first drops the indexes `2026-07-26` reads a run's spec files with, so those reads have no index until the build finishes.
+  - On a large database the builds take hours and keep MongoDB's CPU busy.
+  - Estimate the time for your install, and on a large database build the indexes before upgrading, in a maintenance window. See [Upgrading from 2026-07-26 to 2026-10-14](../docs/upgrading.md#upgrading-from-2026-07-26-to-2026-10-14).
+  - The migrations take about a minute per 100,000 runs.
+  - The dashboard, API and run recording keep running, more slowly. Until the migrations finish, filtering runs by status can leave out runs recorded before the upgrade, and new results can take longer to process. Check that the scheduler's last startup in `docker compose logs scheduler` ends with `Startup tasks complete` (see [Database migration issues](../docs/upgrading.md#database-migration-issues)). If it logs an error instead, such as a ClickHouse `Timeout error.`, the remaining migrations don't run until the scheduler starts again: run `docker compose restart scheduler`. Finished migrations are skipped, and the run backfills skip the runs they already updated.
 
 ### Compose File Changes
 - The bundled RustFS image is `rustfs/rustfs:1.0.1` (requires `./scripts/generate-compose.sh` if using custom templates)
