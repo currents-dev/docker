@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026-10-14-002] - 2026-10-21
+
+Image-only update on `2026-10-14-001`: no compose file or environment variable changes.
+
+- **From `2026-10-14-001`:** update `DC_CURRENTS_IMAGE_TAG`, then `docker compose pull && docker compose up -d`.
+- **From `2026-07-26-00x`:** upgrade straight to this release, but with every step of `2026-10-14-001`, since this release keeps its compose files and `.env` settings:
+  - regenerate the compose file if you use custom templates (see its Compose File Changes);
+  - add its new `.env` block (see its New Environment Variables);
+  - follow its Breaking Changes and Upgrade Notes.
+
+  Without the `.env` block, context sharing and logo editing are off, session file uploads answer `503`, and remote MCP sign-in stays off.
+
+### Fixed
+- After upgrading to `2026-10-14-001`, users who had signed in before the upgrade could not sign in again. SAML SSO returned to the sign-in page with `account_not_linked`, and the root admin's email and password sign-in answered `INVALID_EMAIL_OR_PASSWORD`. They sign in again with no change to the database. If you added an `issuer` field to the `account` documents by hand, leave it: nothing reads it.
+- On `2026-10-14-001`, the first sign-in that created a new account, such as a new SAML user, could hang until the proxy timed out. Signing in again worked.
+
+### Upgrade Notes
+- The scheduler drops the `account_issuer_accountId_uidx` index from the MongoDB `account` collection when it starts (migration `20261021-drop-account-issuer-index`). `2026-10-14-001` created it on the first new account. An install that never ran `2026-10-14-001` doesn't have it, and the migration does nothing.
+- A SAML sign-in started before the containers restart and finished after fails. Start it again from the Currents sign-in page.
+
+### Changed
+- An MCP client that asks only for identity scopes (`openid`, `profile`, `email`, `offline_access`) shows the consent screen once, even when the person already allowed the same client into an organization.
+- A `localhost` redirect URI matches on any port, as `127.0.0.1` and `[::1]` already did.
+- A client can register a custom-scheme redirect URI that names a host, such as Cursor's `cursor://anysphere.cursor-retrieval/oauth/callback`.
+- An authorization whose `redirect_uri` holds a fragment (`#…`) or a user name and password is refused.
+
 ## [2026-10-14-001] - 2026-10-14
 
 Feature release: remote MCP with sign-in through an OAuth provider, context sharing and session files in a second bucket, and artifact expiry in the bundled RustFS. It changes the SAML SSO sign-in URL, so read Breaking Changes before upgrading. Update `DC_CURRENTS_IMAGE_TAG`, regenerate the compose file if you use custom templates, add the new `.env` block, then `docker compose pull && docker compose up -d`.
