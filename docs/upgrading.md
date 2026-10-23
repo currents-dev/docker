@@ -125,7 +125,7 @@ Replace `currents` if you changed `MONGODB_DATABASE`. With your own MongoDB, con
 ```js
 const gb = (c) => db.getCollection(c).stats().size / 1e9;
 const runs = db.runs.estimatedDocumentCount();
-const indexGB = 2 * gb('instances') + gb('runs') + gb('testRecord');
+const indexGB = 2 * gb('instances') + gb('runs') + gb('testRecord') + gb('instanceStats');
 print(`runs: ${runs}`);
 print(`data the index builds read: ${indexGB.toFixed(1)} GB`);
 print(`index builds: ${Math.ceil(indexGB / 60)} to ${Math.ceil(indexGB * 0.6)} minutes`);
@@ -187,7 +187,27 @@ With the indexes already built, the upgrade only drops the two old `instances` i
    ```
 
    Each command returns when its build is done, with `ok: 1`. To follow a build in progress from a second session, run `db.currentOp({ 'command.createIndexes': { $exists: true } })`.
-3. Upgrade straight after the last build, as in [Updates with New Environment Variables](#updates-with-new-environment-variables).
+3. Upgrade straight after the last build. `2026-10-14` has both compose file changes and new environment variables, so:
+
+   ```bash
+   cd on-prem
+   git pull
+
+   # Lists the variables your .env is missing. Add them: the CHANGELOG's
+   # 2026-10-14-001 New Environment Variables says what each one does
+   ./scripts/check-env.sh
+
+   # Set DC_CURRENTS_IMAGE_TAG in your .env to the version in the VERSION file
+   cat VERSION
+
+   # Only if you use a custom profile; a pre-generated profile is updated by git pull
+   ./scripts/generate-compose.sh <your-profile>
+
+   docker compose pull
+   docker compose up -d
+   ```
+
+   Without the new variables, context sharing and logo editing are off, session file uploads answer `503`, and remote MCP sign-in stays off. Without the regenerated compose file, the services don't receive them.
 
 **Don't restart the `2026-07-26` scheduler between the builds and the upgrade.** When it starts, it drops the two `instances` indexes above and rebuilds its own, so run reads lose their index again. Before upgrading, check that `db.instances.getIndexes()` lists `runId_1_createdAt_1__id_-1` and `createdAt_1`; if it doesn't, run the two `instances` commands again.
 
