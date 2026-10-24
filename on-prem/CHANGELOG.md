@@ -32,6 +32,9 @@ Image-only update on `2026-10-14-001`: no compose file or environment variable c
 - A client can register a custom-scheme redirect URI that names a host, such as Cursor's `cursor://anysphere.cursor-retrieval/oauth/callback`.
 - An authorization whose `redirect_uri` holds a fragment (`#…`) or a user name and password is refused.
 
+### Security
+- The images run Node.js 24.22.1, which fixes [CVE-2026-111497](https://nvd.nist.gov/vuln/detail/CVE-2026-111497): an out-of-bounds write in the Brotli decoder of `node:zlib`, through which crafted Brotli data can corrupt memory and possibly run code. `2026-10-14-001` runs Node.js 24.22.0, which does not have the fix.
+
 ## [2026-10-14-001] - 2026-10-14
 
 Feature release: remote MCP with sign-in through an OAuth provider, context sharing and session files in a second bucket, and artifact expiry in the bundled RustFS. It changes the SAML SSO sign-in URL, so read Breaking Changes before upgrading. Update `DC_CURRENTS_IMAGE_TAG`, regenerate the compose file if you use custom templates, add the new `.env` block, then `docker compose pull && docker compose up -d`.
