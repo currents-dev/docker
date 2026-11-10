@@ -94,6 +94,24 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 | `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
 | `OAUTH_RATE_LIMIT_REGISTER_MAX`, `OAUTH_RATE_LIMIT_TOKEN_MAX`, `OAUTH_RATE_LIMIT_AUTHORIZE_MAX`, `OAUTH_RATE_LIMIT_USERINFO_MAX` | int | `5`, `20`, `30`, `60` | OAuth requests per client address per 60 seconds, on top of `BETTER_AUTH_RATE_LIMIT_MAX` |
 
+### AI Explanations and Chat (Optional)
+
+The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. It reads these variables from `.env`, as do all services. `webhooks` does not run AI tasks.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `LLM_PROVIDER_URL` | string | `http://localhost:4001/v1` | Base URL of an OpenAI-compatible API |
+| `LLM_API_KEY` | string | _(empty)_ | API key for the LLM provider |
+| `LLM_MODEL` | string | `gpt-6-luna` | Model for chat and run-analysis sessions |
+| `LLM_EXPLANATION_MODEL` | string | `gpt-6-luna` | Model for test and error explanations |
+| `LLM_REASONING_EFFORT` | string | `medium` | `none`, `low`, `medium` or `high`; any other value falls back to `medium` |
+| `LLM_EXPLANATION_REASONING_EFFORT` | string | `LLM_REASONING_EFFORT` | Reasoning effort for explanations; same values |
+| `EXPLANATION_TRACE_TOOLS` | bool | `false` | `true`: error explanations read the Playwright trace of the failed attempt |
+| `AI_QUEUE_CONCURRENCY` | int | `5` | AI tasks run at the same time |
+| `USE_MOCK_AI` | bool | `false` | Return mock answers without calling an LLM (testing) |
+
+The service starts with the compose file. To run no worker, stop it with `docker compose stop ai-queue-worker`; AI tasks then wait in the queue.
+
 ### SAML SSO (Optional)
 
 Enable SAML single sign-on by setting the two required variables and mounting your IdP metadata file into `./data/sso`. See [Enable SAML SSO](sso-saml.md) for the full walkthrough. SSO turns on automatically once both required variables are set — there is no separate enable flag.

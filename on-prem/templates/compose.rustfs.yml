@@ -153,3 +153,7 @@ services:
   webhooks:
     environment:
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
+
+  ai-queue-worker:
+    environment:
+      FILE_STORAGE_FORCE_PATH_STYLE: "true"

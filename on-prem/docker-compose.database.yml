@@ -169,6 +169,23 @@ services:
       redis:
         condition: service_started
         required: false
+  # Runs the AI tasks from the ai-bmq queue. Reads the LLM_* settings from .env.
+  ai-queue-worker:
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}ai-queue-worker:${DC_CURRENTS_IMAGE_TAG:-staging}
+    restart: unless-stopped
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      CURRENTS_ENV: onprem
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
   traefik:
     hostname: traefik
     image: ${DC_TRAEFIK_IMAGE:-traefik:v3.3}
