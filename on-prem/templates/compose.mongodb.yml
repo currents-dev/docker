@@ -86,3 +86,9 @@ services:
       mongodb:
         condition: service_healthy
         required: false
+
+  ai-queue-worker:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false

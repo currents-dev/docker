@@ -120,6 +120,7 @@ Utility for generating secrets and keys.
 - **write-worker** - Async write operations
 - **scheduler** - Scheduled tasks and startup migrations
 - **webhooks** - Webhook delivery service
+- **ai-queue-worker** - Runs AI tasks (test explanations, chat) from the `ai-bmq` queue (enabled with the `ai` profile)
 
 #### Data Services (optional, based on profile)
 

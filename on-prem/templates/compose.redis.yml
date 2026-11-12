@@ -49,3 +49,9 @@ services:
       redis:
         condition: service_started
         required: false
+
+  ai-queue-worker:
+    depends_on:
+      redis:
+        condition: service_started
+        required: false

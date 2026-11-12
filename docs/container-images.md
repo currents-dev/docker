@@ -36,7 +36,9 @@ Create an IAM role in your AWS account with the following policy:
         "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/writer/*",
         "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/writer",
         "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/webhooks/*",
-        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/webhooks"
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/webhooks",
+        "arn:aws:ecr:us-east-1:513558712013:currents/on-prem/ai-queue-worker/*",
+        "arn:aws:ecr:us-east-1:513558712013:repository/currents/on-prem/ai-queue-worker"
       ]
     }
   ]
@@ -76,7 +78,7 @@ TARGET_REGISTRY=your-registry.example.com/currents
 TAG=staging  # or specific version tag
 
 # List of Currents services
-SERVICES="api director change-streams scheduler writer webhooks"
+SERVICES="api director change-streams scheduler writer webhooks ai-queue-worker"
 
 # Pull, tag, and push each image
 for service in $SERVICES; do
@@ -155,7 +157,7 @@ SOURCE_REGISTRY=ghcr.io/currents-dev/currents-
 TARGET_REGISTRY=your-registry.example.com/currents/
 TAG=staging
 
-SERVICES="api director change-streams scheduler writer webhooks"
+SERVICES="api director change-streams scheduler writer webhooks ai-queue-worker"
 
 for service in $SERVICES; do
   docker pull ${SOURCE_REGISTRY}${service}:${TAG}

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Compose File Changes
+- New service `ai-queue-worker` in all three compose files, in the `ai` profile, so it does not start unless you turn it on. It runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. Regenerate your compose file if you use custom templates.
+
+### Added
+- Image `ai-queue-worker`. To turn the worker on, pull or mirror it with the other images (see [Container Image Access](../docs/container-images.md)), and add the `currents/on-prem/ai-queue-worker` repository to your ECR policy.
+
+### Upgrade Notes
+- `webhooks` no longer runs AI tasks, and `ai-queue-worker` is off by default. **If you use AI today, it stops at this upgrade until you turn the worker on:** add `COMPOSE_PROFILES=ai` to `.env` (`COMPOSE_PROFILES=tls,ai` with TLS, and then start without `--profile tls`, which replaces it), and keep `AI_QUEUE_WORKER_ENABLED=true` and your `LLM_*` settings, which the worker reads from the same `.env`. See AI Explanations and Chat in the [Configuration Reference](../docs/configuration.md).
+- `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections. In `webhooks` it now only starts the Slack AI answer worker, and only when `SLACK_AI_CALLBACK_WORKER_ENABLED` is unset.
+
 ## [2026-10-14-002] - 2026-10-27
 
 Image-only update on `2026-10-14-001`: no compose file or environment variable changes.

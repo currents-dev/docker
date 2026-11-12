@@ -116,6 +116,21 @@ services:
       CURRENTS_ENV: onprem
       EMAIL_TRANSPORTER: smtp
 
+  # Runs the AI tasks from the ai-bmq queue. Reads the LLM_* settings from .env.
+  ai-queue-worker:
+    image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}ai-queue-worker:${DC_CURRENTS_IMAGE_TAG:-staging}
+    restart: unless-stopped
+    # Off by default: it needs an LLM endpoint. Start it with COMPOSE_PROFILES=ai
+    # in .env (see docs/configuration.md).
+    profiles:
+      - ai
+    networks:
+      - default
+    env_file:
+      - .env
+    environment:
+      CURRENTS_ENV: onprem
+
 networks:
   default: null
 

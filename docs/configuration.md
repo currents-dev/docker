@@ -94,6 +94,36 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 | `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
 | `OAUTH_RATE_LIMIT_REGISTER_MAX`, `OAUTH_RATE_LIMIT_TOKEN_MAX`, `OAUTH_RATE_LIMIT_AUTHORIZE_MAX`, `OAUTH_RATE_LIMIT_USERINFO_MAX` | int | `5`, `20`, `30`, `60` | OAuth requests per client address per 60 seconds, on top of `BETTER_AUTH_RATE_LIMIT_MAX` |
 
+### AI Explanations and Chat (Optional)
+
+The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. `webhooks` does not run AI tasks.
+
+The service is off by default, because it needs an LLM endpoint you provide. AI stays off for an organization until an admin grants AI consent in its settings, so turn the worker on first: AI tasks requested without it wait in the queue and never finish. To turn it on, add to `.env`:
+
+```bash
+COMPOSE_PROFILES=ai
+AI_QUEUE_WORKER_ENABLED=true
+```
+
+- `COMPOSE_PROFILES=ai` starts `ai-queue-worker` with `docker compose up -d`. With TLS, set `COMPOSE_PROFILES=tls,ai` and run `docker compose up -d` without `--profile tls`: a `--profile` flag replaces `COMPOSE_PROFILES`, so `--profile tls` starts Traefik but not the worker.
+- `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections, including the ones that expire old AI sessions. In `webhooks` it also starts the Slack AI answer worker, unless `SLACK_AI_CALLBACK_WORKER_ENABLED` is set.
+
+Then set the LLM endpoint below and run `docker compose up -d`. The worker reads these variables from `.env`, as do all services.
+
+To turn the worker off, remove `ai` from `COMPOSE_PROFILES` and run `docker compose rm -sf ai-queue-worker`. `docker compose up -d` does not stop a service whose profile is no longer listed, so the worker keeps running with its old settings.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `LLM_PROVIDER_URL` | string | `http://localhost:4001/v1` | Base URL of an OpenAI-compatible API |
+| `LLM_API_KEY` | string | _(empty)_ | API key for the LLM provider |
+| `LLM_MODEL` | string | `gpt-6-luna` | Model for chat and run-analysis sessions |
+| `LLM_EXPLANATION_MODEL` | string | `gpt-6-luna` | Model for test and error explanations |
+| `LLM_REASONING_EFFORT` | string | `medium` | `none`, `low`, `medium` or `high`; any other value falls back to `medium` |
+| `LLM_EXPLANATION_REASONING_EFFORT` | string | `LLM_REASONING_EFFORT` | Reasoning effort for explanations; same values |
+| `EXPLANATION_TRACE_TOOLS` | bool | `false` | `true`: error explanations read the Playwright trace of the failed attempt |
+| `AI_QUEUE_CONCURRENCY` | int | `5` | AI tasks run at the same time |
+| `USE_MOCK_AI` | bool | `false` | Return mock answers without calling an LLM (testing) |
+
 ### SAML SSO (Optional)
 
 Enable SAML single sign-on by setting the two required variables and mounting your IdP metadata file into `./data/sso`. See [Enable SAML SSO](sso-saml.md) for the full walkthrough. SSO turns on automatically once both required variables are set — there is no separate enable flag.
