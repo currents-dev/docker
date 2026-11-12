@@ -96,7 +96,19 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 
 ### AI Explanations and Chat (Optional)
 
-The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. It reads these variables from `.env`, as do all services. `webhooks` does not run AI tasks.
+The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. `webhooks` does not run AI tasks.
+
+The service is off by default, because it needs an LLM endpoint you provide. AI stays off for an organization until an admin grants AI consent in its settings, so turn the worker on first: AI tasks requested without it wait in the queue and never finish. To turn it on, add to `.env`:
+
+```bash
+COMPOSE_PROFILES=ai
+AI_QUEUE_WORKER_ENABLED=true
+```
+
+- `COMPOSE_PROFILES=ai` starts `ai-queue-worker` with `docker compose up -d`. If you also use the `tls` profile, set `COMPOSE_PROFILES=tls,ai`.
+- `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections, including the ones that expire old AI sessions. In `webhooks` it also starts the Slack AI answer worker, unless `SLACK_AI_CALLBACK_WORKER_ENABLED` is set.
+
+Then set the LLM endpoint below and run `docker compose up -d`. The worker reads these variables from `.env`, as do all services.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -109,8 +121,6 @@ The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from t
 | `EXPLANATION_TRACE_TOOLS` | bool | `false` | `true`: error explanations read the Playwright trace of the failed attempt |
 | `AI_QUEUE_CONCURRENCY` | int | `5` | AI tasks run at the same time |
 | `USE_MOCK_AI` | bool | `false` | Return mock answers without calling an LLM (testing) |
-
-The service starts with the compose file. To run no worker, stop it with `docker compose stop ai-queue-worker`; AI tasks then wait in the queue.
 
 ### SAML SSO (Optional)
 
