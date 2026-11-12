@@ -110,6 +110,8 @@ AI_QUEUE_WORKER_ENABLED=true
 
 Then set the LLM endpoint below and run `docker compose up -d`. The worker reads these variables from `.env`, as do all services.
 
+To turn the worker off, remove `ai` from `COMPOSE_PROFILES` and run `docker compose rm -sf ai-queue-worker`. `docker compose up -d` does not stop a service whose profile is no longer listed, so the worker keeps running with its old settings.
+
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `LLM_PROVIDER_URL` | string | `http://localhost:4001/v1` | Base URL of an OpenAI-compatible API |
