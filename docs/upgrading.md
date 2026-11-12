@@ -81,6 +81,49 @@ docker compose pull
 docker compose up -d
 ```
 
+## Index Builds Before an Upgrade
+
+A release that declares a new index builds it the first time the new scheduler starts, as part of its startup tasks. On a large `instances` collection that has taken about an hour, and the services are up but incomplete the whole time: `docker compose up -d` returns immediately, while the API answers against a database that is still building.
+
+Between `docker compose pull` and `docker compose up -d` the new images are on disk and the old containers are still running. That is the window to find out what the build will cost:
+
+```bash
+docker compose run --rm scheduler \
+  node /app/packages/mongo/dist/scripts/migrate.js index-plan --gate
+```
+
+This only reads. It runs the image you are upgrading **to** — `docker compose run` uses the `DC_CURRENTS_IMAGE_TAG` already set in your `.env`, which is the new version by this point in the upgrade.
+
+- **Exit 0** — nothing pending, or the estimate is under ten minutes. Carry on with `docker compose up -d`.
+- **Exit 2** — the estimated build is over ten minutes. The output names the collections, their sizes and the indexes:
+
+```
+Index build estimated at 64 minutes, which is over the limit of 10 minutes.
+
+  instances: 109.0 GB, about 62 minutes (createdAt_1)
+
+Estimated at 30.0 MB/s, the built-in default — this deployment has recorded no index builds of its own, so the real build may be several times faster.
+```
+
+- **Any other exit code** — the check itself failed. That is a different problem from a slow build; read the error before deciding.
+
+That rate line matters. Until a build has been recorded the estimate uses a deliberately slow rate, so a first upgrade can report an hour for something that really takes a few minutes. Once one build has been recorded the estimate uses this deployment's own measured rate and the figure is worth trusting.
+
+Pass `--gate-seconds <n>` to use a limit other than 600.
+
+### Building the Indexes First
+
+If the estimate is more downtime than you want, build the indexes before the upgrade, while the old containers keep serving:
+
+```bash
+docker compose run --rm scheduler \
+  node /app/packages/mongo/dist/scripts/migrate.js sync-indexes
+```
+
+Same image, same database. Index sync only adds indexes, so the running version gets indexes it does not use yet and is otherwise unaffected. Index builds read whole collections, so pick a quiet window — nothing is down, but the database is busy.
+
+When it finishes, run `docker compose up -d` as usual. The new scheduler finds the indexes already there and its startup tasks complete immediately.
+
 ## Version Checking
 
 Check your current version:
@@ -280,6 +323,8 @@ docker compose logs scheduler | grep -E 'Running startup tasks|Startup tasks com
 ```
 
 The last `Running startup tasks...` line should be followed by `Startup tasks complete`. `docker compose restart` keeps the logs of earlier starts, so a `Startup tasks complete` line before it doesn't count.
+
+A long gap with no error between those two lines is usually an index build on a large collection, not a stuck service. See [Index Builds Before an Upgrade](#index-builds-before-an-upgrade) for how to find out what the build costs before you upgrade.
 
 If a migration fails, for example with a ClickHouse `Timeout error.` on a busy host, the scheduler logs the error (`"level":50`) and keeps running, but the remaining migrations don't run until it starts again. Restart it:
 
