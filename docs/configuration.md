@@ -105,7 +105,7 @@ COMPOSE_PROFILES=ai
 AI_QUEUE_WORKER_ENABLED=true
 ```
 
-- `COMPOSE_PROFILES=ai` starts `ai-queue-worker` with `docker compose up -d`. If you also use the `tls` profile, set `COMPOSE_PROFILES=tls,ai`.
+- `COMPOSE_PROFILES=ai` starts `ai-queue-worker` with `docker compose up -d`. With TLS, set `COMPOSE_PROFILES=tls,ai` and run `docker compose up -d` without `--profile tls`: a `--profile` flag replaces `COMPOSE_PROFILES`, so `--profile tls` starts Traefik but not the worker.
 - `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections, including the ones that expire old AI sessions. In `webhooks` it also starts the Slack AI answer worker, unless `SLACK_AI_CALLBACK_WORKER_ENABLED` is set.
 
 Then set the LLM endpoint below and run `docker compose up -d`. The worker reads these variables from `.env`, as do all services.
