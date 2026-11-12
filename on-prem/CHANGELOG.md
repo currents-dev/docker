@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Upgrade Notes
 - `webhooks` no longer runs AI tasks, and `ai-queue-worker` is off by default. **If you use AI today, it stops at this upgrade until you turn the worker on:** add `COMPOSE_PROFILES=ai` to `.env` (`COMPOSE_PROFILES=tls,ai` with TLS, and then start without `--profile tls`, which replaces it), and keep `AI_QUEUE_WORKER_ENABLED=true` and your `LLM_*` settings, which the worker reads from the same `.env`. See AI Explanations and Chat in the [Configuration Reference](../docs/configuration.md).
 - `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections. In `webhooks` it now only starts the Slack AI answer worker, and only when `SLACK_AI_CALLBACK_WORKER_ENABLED` is unset.
+- **The scheduler builds six MongoDB indexes and runs five migrations when it starts, which takes seconds.** None of the indexes is on `instances`, `runs` or `testRecord`. On a test install with 3.1 million `instances`, startup finished 18 seconds after `docker compose up -d`. Run the index check in the upgrade guide before `docker compose up -d`. See [Upgrading from 2026-10-14 to 2026-11-10](../docs/upgrading.md#upgrading-from-2026-10-14-to-2026-11-10).
+- **Organization API keys, record keys and the SCIM secret get a stored hash.** A key whose value another document also holds is left without one, and the scheduler logs a warning with the documents' ids. The upgrade guide says how to resolve them.
 
 ## [2026-10-14-002] - 2026-10-27
 
