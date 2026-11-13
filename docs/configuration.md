@@ -100,7 +100,9 @@ The API answers trace links at `<API_BASE_URL>/t`, with nothing to set. A trace 
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `TRACE_LINK_BASE_URL` | string | `<API_BASE_URL>/t` | The address trace links point at, when agents reach the API on another one |
+| `TRACE_LINK_BASE_URL` | string | `<API_BASE_URL>/t` | The address trace links point at, to serve them on a host of their own, such as `https://traces.example.com/t`. Keep the `/t`: the API serves trace links only under it, and a value without it gives links that open the dashboard |
+
+With `TRACE_LINK_BASE_URL` on another host, route that host to the `api` container (port 4000) in your proxy, with its own TLS certificate. The bundled Traefik (`tls` profile) routes only its API, director and storage hosts (`TRAEFIK_*_SUBDOMAIN` under `TRAEFIK_DOMAIN`).
 
 Trace work runs on worker threads in the `api` container, one job per thread, so it doesn't slow the rest of the API. The threads follow the container's CPUs: the host's, since the compose files set no CPU limit.
 
