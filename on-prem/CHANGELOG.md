@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Compose File Changes
-- `scheduler` waits for `clickhouse` to be healthy before it starts. `docker compose up -d` recreates `clickhouse` whenever `.env` changes, as it does on every upgrade, and a scheduler that started first skipped its ClickHouse migrations. Regenerate your compose file if you use custom templates.
+- `scheduler` waits for `clickhouse` to be healthy before it starts. `docker compose up -d` recreates `clickhouse` whenever `.env` changes, as it does on every upgrade, and a scheduler that started first skipped its ClickHouse migrations. If `clickhouse` isn't healthy within about 80 seconds, Compose starts the scheduler anyway; restart the scheduler once `clickhouse` is up. Regenerate your compose file if you use custom templates.
 - New service `ai-queue-worker` in all three compose files, in the `ai` profile, so it does not start unless you turn it on. It runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. Regenerate your compose file if you use custom templates.
 
 ### Added

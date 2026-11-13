@@ -259,6 +259,11 @@ services:
       interval: 2s
       timeout: 5s
       retries: 10
+      # Failed checks in the first minute don't count, so the services that
+      # wait for clickhouse (scheduler, write-worker) keep waiting while a large
+      # data directory loads. Without it Compose gives up after ~20 s and starts
+      # them anyway, before clickhouse answers.
+      start_period: 60s
     env_file:
       - .env
     ports:
