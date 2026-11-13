@@ -142,6 +142,55 @@ Check running container versions:
 docker compose ps --format "table {{.Name}}\t{{.Image}}"
 ```
 
+## Upgrading from 2026-10-14 to 2026-11-10
+
+This release changes the Compose files, so upgrade as in [Updates with Compose File Changes](#updates-with-compose-file-changes). If you use AI explanations or chat, turn on the new `ai-queue-worker` service in the same upgrade: see [AI explanations and chat](#ai-explanations-and-chat).
+
+`2026-11-10` builds six MongoDB indexes and runs five migrations when the scheduler starts. None of the indexes is on `instances`, `runs` or `testRecord`, and the migrations read only keys and secrets, so there is nothing to build ahead of the upgrade. On a test install with 3.1 million `instances` (41 GB), 310,000 runs and 124,000 orchestration sessions, the scheduler logged `Startup tasks complete` 18 seconds after `docker compose up -d`.
+
+Run the check in [Index Builds Before an Upgrade](#index-builds-before-an-upgrade) before `docker compose up -d`. On the test install it exited `0` with an estimate of 25 seconds, and the builds took 1 second.
+
+Of this release's indexes, only the one on `orchestrationSession` grows with your history, and only if you use orchestration. At the check's default rate the collection would need about 18 GB to pass the 10-minute limit. If the check exits `2` and names `orchestrationSession`, build it first as in [Building the Indexes First](#building-the-indexes-first).
+
+### What the scheduler builds and runs
+
+| Index | Collection |
+|---|---|
+| `orchestrationSession` `{ runId: 1 }` | Grows with orchestrated runs. 0.79 GB took about 1 second in testing. |
+| `oauthRefreshToken` `{ rotationReplayExpiresAt: 1 }` | Small: refresh tokens of MCP clients. |
+| `orgStorageDaily` `{ date: 1, orgId: 1, bytes: 1 }` | Empty on-prem. |
+| `scimPendingUsers` `{ orgId: 1, email: 1 }` (unique) | Written only by SCIM provisioning. |
+| `customerRequests`, two indexes | Empty on-prem. |
+
+| Migration | What it does | Time in testing |
+|---|---|---|
+| `20261028-drop-superseded-instances-indexes` | Drops two `instances` indexes that newer ones replace, once the replacements exist. `2026-10-14` already dropped them, so it finds nothing. | 3 ms |
+| `20261103-redact-audit-log-secrets` | Masks credentials in stored audit log records. On-prem doesn't store audit records in MongoDB, so it usually finds none. | 553 ms for 10,000 records |
+| `20261109-backfill-api-key-hashes` | Stores a hash and the last 4 characters of each organization API key. | 202 ms for 3,000 keys |
+| `20261110-backfill-record-key-hashes` | Stores a hash and the last 4 characters of each record key. | 25 ms for 400 keys |
+| `20261110-backfill-scim-secret-hashes` | Stores a hash and the last 4 characters of the SCIM secret. | 2 ms |
+
+The two key migrations leave a key without a hash when another document holds the same value, and log a warning with the documents' ids:
+
+- `left N organization API key(s) in M group(s) without a hash`: API keys that share a value already fail to authenticate. Delete the extra copies.
+- `left N record key(s) without a hash`: a record key shared by two organizations. Have all but one of them rotate their record key; deleting a copy breaks that organization's CI.
+
+Still on `2026-07-26`? The scheduler also builds the `2026-10-14` indexes on `instances`, `runs` and `testRecord`: estimate and build them first as in [Upgrading from 2026-07-26 to 2026-10-14](#upgrading-from-2026-07-26-to-2026-10-14). `2026-11-10` builds the replacement `instances` indexes before it drops the old ones, so reading a run's spec files keeps an index throughout.
+
+### AI explanations and chat
+
+`webhooks` doesn't run AI tasks in `2026-11-10`. The new `ai-queue-worker` service runs them, and it is in the `ai` Compose profile, which is off by default. If you set `AI_QUEUE_WORKER_ENABLED=true` to use AI, AI stops at this upgrade until you turn the worker on. Before `docker compose up -d`, add to `.env`:
+
+```bash
+COMPOSE_PROFILES=ai
+```
+
+- Keep `AI_QUEUE_WORKER_ENABLED=true` and your `LLM_*` settings. The worker reads them from the same `.env`.
+- With TLS, set `COMPOSE_PROFILES=tls,ai` and run `docker compose up -d` without `--profile tls`. A `--profile` flag replaces `COMPOSE_PROFILES`, so `--profile tls` starts Traefik but not the worker.
+- Pull or mirror the `ai-queue-worker` image with the others, and add its repository to your ECR policy. See [Container Image Access](./container-images.md).
+
+The settings are in [AI Explanations and Chat](./configuration.md#ai-explanations-and-chat-optional). If you don't use AI, nothing changes.
+
 ## Upgrading from 2026-07-26 to 2026-10-14
 
 Upgrade to `2026-10-14-002` or later. On `2026-10-14-001`, users who signed in before the upgrade can't sign in again: SAML SSO returns them to the sign-in page with `account_not_linked`, and the root admin's password sign-in answers `INVALID_EMAIL_OR_PASSWORD`. `2026-10-14-002` signs them in with no change to the database.
@@ -284,6 +333,8 @@ git checkout <previous-tag-or-commit>
 # Start services
 docker compose up -d
 ```
+
+Rolling back from `2026-11-10` to `2026-10-14` builds and drops nothing: the `2026-10-14` scheduler keeps the new indexes, and the stored hashes are fields it doesn't read.
 
 Rolling back from `2026-10-14` to `2026-07-26` rebuilds indexes. When the `2026-07-26` scheduler starts, it drops the two `instances` indexes `2026-10-14` builds and rebuilds its own, which takes as long as the `instances` builds in the [estimate](#estimate-the-upgrade-time). Reading a run's spec files has no index until the first one finishes, so roll back in a maintenance window too.
 
