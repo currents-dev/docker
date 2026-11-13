@@ -135,6 +135,9 @@ services:
       redis:
         condition: service_started
         required: false
+  # The scheduler runs the ClickHouse migrations when it starts. `up -d` also
+  # recreates clickhouse when .env changes, as it does on every upgrade; without
+  # this the new scheduler starts first, gets ECONNREFUSED, and skips them.
   scheduler:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
@@ -151,6 +154,9 @@ services:
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
       mongodb:
         condition: service_healthy
         required: false
@@ -253,6 +259,11 @@ services:
       interval: 2s
       timeout: 5s
       retries: 10
+      # Failed checks in the first minute don't count, so the services that
+      # wait for clickhouse (scheduler, write-worker) keep waiting while a large
+      # data directory loads. Without it Compose gives up after ~20 s and starts
+      # them anyway, before clickhouse answers.
+      start_period: 60s
     env_file:
       - .env
     ports:

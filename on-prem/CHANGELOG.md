@@ -7,12 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Compose File Changes
+- `scheduler` waits for `clickhouse` to be healthy before it starts. `docker compose up -d` recreates `clickhouse` whenever `.env` changes, as it does on every upgrade, and a scheduler that started first skipped its ClickHouse migrations. If `clickhouse` isn't healthy within about 80 seconds, Compose starts the scheduler anyway; restart the scheduler once `clickhouse` is up. Regenerate your compose file if you use custom templates.
 - New service `ai-queue-worker` in all three compose files, in the `ai` profile, so it does not start unless you turn it on. It runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. Regenerate your compose file if you use custom templates.
 
 ### Added
 - Image `ai-queue-worker`. To turn the worker on, pull or mirror it with the other images (see [Container Image Access](../docs/container-images.md)), and add the `currents/on-prem/ai-queue-worker` repository to your ECR policy.
 
 ### Upgrade Notes
+- **Pull the new images before stopping anything,** then run `docker compose up -d` without `docker compose down`. See [Updates with Compose File Changes](../docs/upgrading.md#updates-with-compose-file-changes).
 - `webhooks` no longer runs AI tasks, and `ai-queue-worker` is off by default. **If you use AI today, it stops at this upgrade until you turn the worker on:** add `COMPOSE_PROFILES=ai` to `.env` (`COMPOSE_PROFILES=tls,ai` with TLS, and then start without `--profile tls`, which replaces it), and keep `AI_QUEUE_WORKER_ENABLED=true` and your `LLM_*` settings, which the worker reads from the same `.env`. See AI Explanations and Chat in the [Configuration Reference](../docs/configuration.md).
 - `AI_QUEUE_WORKER_ENABLED=true` has the scheduler build the MongoDB indexes for the AI collections. In `webhooks` it now only starts the Slack AI answer worker, and only when `SLACK_AI_CALLBACK_WORKER_ENABLED` is unset.
 - **The scheduler builds six MongoDB indexes and runs five migrations when it starts, which takes seconds.** None of the indexes is on `instances`, `runs` or `testRecord`. On a test install with 3.1 million `instances`, startup finished 18 seconds after `docker compose up -d`. Run the index check in the upgrade guide before `docker compose up -d`. See [Upgrading from 2026-10-14 to 2026-11-10](../docs/upgrading.md#upgrading-from-2026-10-14-to-2026-11-10).

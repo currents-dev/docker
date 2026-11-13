@@ -10,6 +10,8 @@ This guide covers upgrading your Currents on-prem deployment to a new version.
 
 ## Upgrade Types
 
+Every update ends with `docker compose up -d`. Then check that the scheduler logged `Startup tasks complete`, as in [Database migration issues](#database-migration-issues): if a migration failed, the services keep running but the remaining migrations wait for a scheduler restart.
+
 ### Image-Only Updates
 
 When a new version only includes updated container images (no compose or config changes):
@@ -36,9 +38,6 @@ When the CHANGELOG indicates compose file changes:
 ```bash
 cd on-prem
 
-# Stop services (recommended for major updates)
-docker compose down
-
 # Pull latest repository changes
 git pull
 
@@ -50,12 +49,14 @@ git pull
 
 # Or if using a pre-generated profile, it's already updated by git pull
 
-# Pull new images
+# Pull the new images while the running version keeps serving
 docker compose pull
 
-# Start services
+# Replace the containers
 docker compose up -d
 ```
+
+Don't stop the services before `docker compose pull`. After `docker compose down`, nothing runs while the images download, which took over 2 minutes in testing. Test reporters retry a failed request for about 50 seconds and then give up, so CI runs recording through a longer outage lose their results while their CI jobs still pass. With the images pulled first, `docker compose up -d` replaces the containers in about 15 seconds, and the reporters retry through it.
 
 ### Updates with New Environment Variables
 
