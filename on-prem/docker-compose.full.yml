@@ -135,6 +135,9 @@ services:
       redis:
         condition: service_started
         required: false
+  # The scheduler runs the ClickHouse migrations when it starts. `up -d` also
+  # recreates clickhouse when .env changes, as it does on every upgrade; without
+  # this the new scheduler starts first, gets ECONNREFUSED, and skips them.
   scheduler:
     image: ${DC_CURRENTS_IMAGE_REPOSITORY:-currents-}scheduler:${DC_CURRENTS_IMAGE_TAG:-staging}
     restart: unless-stopped
@@ -151,6 +154,9 @@ services:
     volumes:
       - ${DC_SCHEDULER_STARTUP_VOLUME:-./data/startup}:/app/packages/scheduler/dist/.startup
     depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
       mongodb:
         condition: service_healthy
         required: false

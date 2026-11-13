@@ -63,3 +63,12 @@ services:
       clickhouse:
         condition: service_healthy
         required: false
+
+  # The scheduler runs the ClickHouse migrations when it starts. `up -d` also
+  # recreates clickhouse when .env changes, as it does on every upgrade; without
+  # this the new scheduler starts first, gets ECONNREFUSED, and skips them.
+  scheduler:
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        required: false
