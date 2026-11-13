@@ -144,6 +144,8 @@ docker compose ps --format "table {{.Name}}\t{{.Image}}"
 
 ## Upgrading from 2026-10-14 to 2026-11-10
 
+This release changes the Compose files, so upgrade as in [Updates with Compose File Changes](#updates-with-compose-file-changes). If you use AI explanations or chat, turn on the new `ai-queue-worker` service in the same upgrade: see [AI explanations and chat](#ai-explanations-and-chat).
+
 `2026-11-10` builds six MongoDB indexes and runs five migrations when the scheduler starts. None of the indexes is on `instances`, `runs` or `testRecord`, and the migrations read only keys and secrets, so there is nothing to build ahead of the upgrade. On a test install with 3.1 million `instances` (41 GB), 310,000 runs and 124,000 orchestration sessions, the scheduler logged `Startup tasks complete` 18 seconds after `docker compose up -d`.
 
 Run the check in [Index Builds Before an Upgrade](#index-builds-before-an-upgrade) before `docker compose up -d`. On the test install it exited `0` with an estimate of 25 seconds, and the builds took 1 second.
@@ -174,6 +176,20 @@ The two key migrations leave a key without a hash when another document holds th
 - `left N record key(s) without a hash`: a record key shared by two organizations. Have all but one of them rotate their record key; deleting a copy breaks that organization's CI.
 
 Still on `2026-07-26`? The scheduler also builds the `2026-10-14` indexes on `instances`, `runs` and `testRecord`: estimate and build them first as in [Upgrading from 2026-07-26 to 2026-10-14](#upgrading-from-2026-07-26-to-2026-10-14). `2026-11-10` builds the replacement `instances` indexes before it drops the old ones, so reading a run's spec files keeps an index throughout.
+
+### AI explanations and chat
+
+`webhooks` doesn't run AI tasks in `2026-11-10`. The new `ai-queue-worker` service runs them, and it is in the `ai` Compose profile, which is off by default. If you set `AI_QUEUE_WORKER_ENABLED=true` to use AI, AI stops at this upgrade until you turn the worker on. Before `docker compose up -d`, add to `.env`:
+
+```bash
+COMPOSE_PROFILES=ai
+```
+
+- Keep `AI_QUEUE_WORKER_ENABLED=true` and your `LLM_*` settings. The worker reads them from the same `.env`.
+- With TLS, set `COMPOSE_PROFILES=tls,ai` and run `docker compose up -d` without `--profile tls`. A `--profile` flag replaces `COMPOSE_PROFILES`, so `--profile tls` starts Traefik but not the worker.
+- Pull or mirror the `ai-queue-worker` image with the others, and add its repository to your ECR policy. See [Container Image Access](./container-images.md).
+
+The settings are in [AI Explanations and Chat](./configuration.md#ai-explanations-and-chat-optional). If you don't use AI, nothing changes.
 
 ## Upgrading from 2026-07-26 to 2026-10-14
 
