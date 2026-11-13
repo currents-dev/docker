@@ -94,6 +94,28 @@ Remote MCP lets coding agents use Currents tools over HTTP at `<APP_BASE_URL>/mc
 | `OAUTH_JWKS_URL` | string | `<APP_BASE_URL>/api/auth/jwks` | Where the API fetches its own signing keys to check access tokens. With a `.localhost` `APP_BASE_URL`, set `http://localhost:4000/api/auth/jwks`: the container cannot resolve `.localhost` names, so every token is rejected. Set the same when the container cannot reach or trust `APP_BASE_URL` (split DNS, an internal CA) |
 | `OAUTH_RATE_LIMIT_REGISTER_MAX`, `OAUTH_RATE_LIMIT_TOKEN_MAX`, `OAUTH_RATE_LIMIT_AUTHORIZE_MAX`, `OAUTH_RATE_LIMIT_USERINFO_MAX` | int | `5`, `20`, `30`, `60` | OAuth requests per client address per 60 seconds, on top of `BETTER_AUTH_RATE_LIMIT_MAX` |
 
+### Trace Links
+
+The API answers trace links at `<API_BASE_URL>/t`, with nothing to set. A trace link gives an agent read access to one failed test's Playwright trace: its summary, frames, page snapshots, network requests and an animation of the failure. Agents get the links in context shares and from MCP, and reach them at the same address as the dashboard.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TRACE_LINK_BASE_URL` | string | `<API_BASE_URL>/t` | The address trace links point at, when agents reach the API on another one |
+
+Trace work runs on worker threads in the `api` container, one job per thread, so it doesn't slow the rest of the API. The threads follow the container's CPUs: the host's, since the compose files set no CPU limit.
+
+| CPUs | Threads |
+|------|---------|
+| 1 | One, for reads and renders |
+| 2–3 | One for reads, one for renders |
+| 4 or more | Two for reads, one for renders |
+
+In testing, an `api` container with 2 CPUs and 2 GB answered about 2 agent investigations per second, with animations under 1.5 s at the 95th percentile and the rest of the API still answering in 2–3 ms. A busy hour of 10 failing runs uses about a sixth of that. The test ran on Apple Silicon; x86 cloud vCPUs render more slowly, so take it as an upper bound.
+
+- Memory peaked at 0.8–1.0 GB under load, plus up to 128 MB of cached trace answers. The cache size is fixed.
+- One render thread runs at a time, so more CPUs make quick reads faster but not animations.
+- Past capacity, trace requests answer `503` with `Retry-After: 5`, and agents retry.
+
 ### AI Explanations and Chat (Optional)
 
 The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. `webhooks` does not run AI tasks.

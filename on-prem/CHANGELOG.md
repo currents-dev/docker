@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - New service `ai-queue-worker` in all three compose files, in the `ai` profile, so it does not start unless you turn it on. It runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. Regenerate your compose file if you use custom templates.
 
 ### Added
+- Trace links. The API answers them at `<API_BASE_URL>/t`, so agents can read a failed test's Playwright trace. See Trace Links in the [Configuration Reference](../docs/configuration.md) for the CPU and memory the trace work uses.
 - Image `ai-queue-worker`. To turn the worker on, pull or mirror it with the other images (see [Container Image Access](../docs/container-images.md)), and add the `currents/on-prem/ai-queue-worker` repository to your ECR policy.
 
 ### Upgrade Notes
