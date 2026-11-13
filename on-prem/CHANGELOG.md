@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026-11-10-003] - 2026-11-13
+
+Feature release: the API serves trace links, so agents can read a failed test's Playwright trace, and AI tasks move to an optional `ai-queue-worker` service. It changes the compose files: pull the new images first, then `docker compose up -d`, as in [Updates with Compose File Changes](../docs/upgrading.md#updates-with-compose-file-changes). From `2026-07-26-00x`, follow the `2026-10-14-001` steps below as well.
+
 ### Compose File Changes
 - `scheduler` waits for `clickhouse` to be healthy before it starts. `docker compose up -d` recreates `clickhouse` whenever `.env` changes, as it does on every upgrade, and a scheduler that started first skipped its ClickHouse migrations. If `clickhouse` isn't healthy within about 80 seconds, Compose starts the scheduler anyway; restart the scheduler once `clickhouse` is up. Regenerate your compose file if you use custom templates.
 - New service `ai-queue-worker` in all three compose files, in the `ai` profile, so it does not start unless you turn it on. It runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. Regenerate your compose file if you use custom templates.
