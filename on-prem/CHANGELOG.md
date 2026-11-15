@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Compose File Changes
+- `ai-queue-worker` gets `CLICKHOUSE_PASSWORD` from `CLICKHOUSE_CURRENTS_PASSWORD`, as `api` and `write-worker` do, so it can read test steps from ClickHouse. Regenerate your compose file if you use custom templates.
+
+### Added
+- **Test steps in ClickHouse, off by default.** `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` and `STEPS_CLICKHOUSE_ONLY_FROM` in `.env` choose, by the time a test starts, whether its steps go to ClickHouse as well as object storage, or to ClickHouse only. `STEPS_RETENTION_DAYS` sets how long `write-worker` keeps them (default 21). Nothing changes until you set a time. Needs images that include the feature; see Test Steps in ClickHouse in the [Configuration Reference](../docs/configuration.md#test-steps-in-clickhouse-optional).
+
 ## [2026-11-10-003] - 2026-11-13
 
 Feature release: the API serves trace links, so agents can read a failed test's Playwright trace, and AI tasks move to an optional `ai-queue-worker` service. It changes the compose files: pull the new images first, then `docker compose up -d`, as in [Updates with Compose File Changes](../docs/upgrading.md#updates-with-compose-file-changes). From `2026-07-26-00x`, follow the `2026-10-14-001` steps below as well.
