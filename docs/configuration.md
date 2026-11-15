@@ -175,7 +175,17 @@ To turn it on:
 
    `ai-queue-worker` runs only with the `ai` profile (see [AI Explanations and Chat](#ai-explanations-and-chat-optional)). With your own ClickHouse, `CLICKHOUSE_URL` must be reachable from all three containers.
 3. Set `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` to a future time in `.env`, and `STEPS_RETENTION_DAYS` if 21 days is not right. Run `docker compose up -d` to recreate the containers.
-4. After that time, run tests. Open one in the dashboard more than 2 hours after its last update, when Redis has dropped it, and check that its steps show. Also check that ClickHouse has rows: `SELECT count() FROM test_attempt_steps`.
+4. After that time, run tests, then query `test_attempt_steps` in ClickHouse directly for tests that started after it:
+
+   ```sql
+   SELECT record_id, attempt, step_count
+   FROM default.test_attempt_steps
+   WHERE started_at >= toDateTime64('2026-12-01 00:00:00', 3, 'UTC')
+   ORDER BY started_at DESC
+   LIMIT 20
+   ```
+
+   Every completed attempt that has steps must have a row, and its `step_count` must match the steps in its object storage file, `<orgId>/steps/<runId>/<recordId>/<attempt>.json.gz`. The dashboard reads object storage for these tests, so it does not show whether ClickHouse has them.
 5. Set `STEPS_CLICKHOUSE_ONLY_FROM` to a future time, and run `docker compose up -d` again.
 
 Do not set `STEPS_CLICKHOUSE_ONLY_FROM` unless `write-worker`, `api` and `ai-queue-worker` reach ClickHouse. Without it `write-worker` cannot insert steps and nothing else holds them, so the steps of those tests are lost. The dashboard and AI show no steps when `api` or `ai-queue-worker` cannot read them.
