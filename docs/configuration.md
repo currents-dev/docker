@@ -196,6 +196,7 @@ To change `STEPS_RETENTION_DAYS`, stop `write-worker`, change `.env`, then start
 
 ```bash
 docker compose stop write-worker
+# Wait until docker compose ps -a shows write-worker as exited, so in-flight inserts finish
 # edit STEPS_RETENTION_DAYS in .env
 docker compose up -d write-worker
 ```
