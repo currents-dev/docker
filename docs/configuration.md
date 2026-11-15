@@ -156,7 +156,7 @@ Currents can keep the steps of each test attempt in ClickHouse instead of object
 |----------|------|---------|-------------|
 | `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` | timestamp | _(empty)_ | Tests that start at or after this time write their steps to ClickHouse and to object storage. The dashboard and AI read them from object storage once Redis no longer has them. Read by `director` and `write-worker` |
 | `STEPS_CLICKHOUSE_ONLY_FROM` | timestamp | _(empty)_ | Tests that start at or after this time write steps to ClickHouse only, and read them from there. It wins over `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` when both match. Read by `director` and `write-worker` |
-| `STEPS_RETENTION_DAYS` | int | `21` | Days steps stay in ClickHouse: 7, 14, 21, 30, 60, 90, 180 or 365. Other values round up. Applies to steps inserted after `write-worker` restarts. Read by `write-worker` |
+| `STEPS_RETENTION_DAYS` | int | `21` | Days steps stay in ClickHouse: 7, 14, 21, 30, 60, 90, 180 or 365. Other values round up. Applies to steps inserted after `write-worker` restarts. To change it, see [Changing the retention](#changing-the-retention). Read by `write-worker` |
 
 Both times are ISO 8601 with a timezone, such as `2026-12-01T00:00:00Z`. The services read them at startup, so set a time that has not come yet, and recreate the containers before it comes. A service still on the old value chooses the storage differently for tests that start after the new time. Tests that started before the time you set keep their steps in object storage. Steps in ClickHouse are deleted after the retention period.
 
@@ -189,6 +189,18 @@ To turn it on:
 5. Set `STEPS_CLICKHOUSE_ONLY_FROM` to a future time, and run `docker compose up -d` again.
 
 Do not set `STEPS_CLICKHOUSE_ONLY_FROM` unless `write-worker`, `api` and `ai-queue-worker` reach ClickHouse. Without it `write-worker` cannot insert steps and nothing else holds them, so the steps of those tests are lost. The dashboard and AI show no steps when `api` or `ai-queue-worker` cannot read them.
+
+#### Changing the retention
+
+To change `STEPS_RETENTION_DAYS`, stop `write-worker`, change `.env`, then start it. If you run more than one `write-worker`, stop all of them first. Writers restarted one at a time can store two versions of one test with different expiry dates.
+
+```bash
+docker compose stop write-worker
+# edit STEPS_RETENTION_DAYS in .env
+docker compose up -d write-worker
+```
+
+#### Going back
 
 To go back, empty both times in `.env` and run `docker compose up -d`. New tests then write steps to object storage. Tests already stored in ClickHouse are still read from there.
 
