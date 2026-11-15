@@ -118,6 +118,25 @@ In testing, an `api` container with 2 CPUs and 2 GB answered about 2 agent inves
 - One render thread runs at a time, so more CPUs make quick reads faster but not animations.
 - Past capacity, trace requests answer `503` with `Retry-After: 5`, and agents retry.
 
+### CI OIDC Token Exchange (Optional)
+
+A CI job can get a record key from the OIDC token its CI provider gives it, so no record key is stored as a CI secret. The reporters ask for a key this way only when no record key is set. The key is valid for 6 hours, is limited to the one project the job names, and the reporter revokes it when the job ends. An organization admin adds a trust policy for each repository or owner in the dashboard; a job without a matching policy is refused.
+
+The exchange is off. Set `OIDC_TOKEN_EXCHANGE_ENABLED=true` in `.env` and run `docker compose up -d` once the requirements below are met. It needs the images of a release that includes the exchange.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `OIDC_TOKEN_EXCHANGE_ENABLED` | bool | _(unset)_ | Turn the exchange on. Off, `POST /oidc/token` answers 404. On with no valid `OIDC_TOKEN_AUDIENCE`, it answers 503 |
+| `OIDC_TOKEN_AUDIENCE` | string | _(empty)_ | The public URL of the director, the one reporters use as `CURRENTS_API_URL`, such as `https://currents-record.example.com`. Only its origin counts: scheme, host and port, no path. A token is accepted only when its audience is this origin |
+| `OIDC_TRUST_FORWARDED_FOR` | bool | _(unset)_ | Count the exchange's requests per client address by the last entry of `X-Forwarded-For`. Set it to `true` only when a proxy in front of the director appends the client's address to that header and passes on none that the caller wrote. Otherwise a caller writes the header and gets a new count for each request, so the limit does nothing. Unset, the limit counts the address of the connection, which behind a proxy is the proxy's: every caller then shares 120 requests a minute. Check what your proxy writes before setting it |
+
+Requirements:
+
+- **Network.** The director checks a token with the CI provider's public signing keys, which it fetches over https through the provider's OpenID Connect discovery document. It needs outbound access to the providers you use: GitHub Actions (`token.actions.githubusercontent.com`), GitLab.com (`gitlab.com`), CircleCI (`oidc.circleci.com`), Buildkite (`agent.buildkite.com`) and Bitbucket Pipelines (`api.bitbucket.org`). It does not work on an install without internet access, and tokens from self-hosted GitLab and GitHub Enterprise are not accepted.
+- **Audience.** The reporters ask the CI provider for a token whose audience is the origin of `CURRENTS_API_URL`, the director URL the reporter is configured with. GitHub Actions jobs get this automatically. On other providers the job names the audience, such as `aud` in a GitLab CI `id_tokens` entry. Set `OIDC_TOKEN_AUDIENCE` to the same origin.
+- **Indexes.** The scheduler creates the indexes the exchange needs when it starts, with the other indexes the release declares: a TTL index on `recordKeys.expiresAt` that removes expired keys, and a partial index on `recordKeys.issuedFor.policyId` that finds the keys of a removed trust policy. There is nothing to build by hand. Record keys are looked up by hash without an index on-prem, which is fast while the collection is small; keys from the exchange are removed 6 hours after they are issued.
+- **Limits.** The director counts at most 120 requests a minute from one address before it checks a token, and at most 600 keys a minute for one organization. When Redis is down it refuses the requests.
+
 ### AI Explanations and Chat (Optional)
 
 The `ai-queue-worker` service runs the AI tasks (test explanations, chat) from the `ai-bmq` queue. `webhooks` does not run AI tasks.
