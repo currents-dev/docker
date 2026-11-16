@@ -72,6 +72,8 @@ git tag on-prem/2026-01-14-001
 git push origin on-prem/2026-01-14-001
 ```
 
+Pushing the tag runs the `Publish Docs` workflow, which publishes `docs/` from the tag to https://currents-dev.github.io/docker. Merging to `main` does not publish the docs.
+
 #### 7. Create a GitHub release
 
 Create a release on GitHub for the tag:
@@ -94,3 +96,15 @@ List all on-prem releases:
 ```bash
 git tag -l 'on-prem/*'
 ```
+
+### Publishing a Docs Fix Between Releases
+
+Docs for unreleased changes merge to `main` with those changes and go live with the next release tag. To publish a fix to the released docs sooner:
+
+```bash
+git checkout -b docs-fix/2026-01-14-001 on-prem/2026-01-14-001
+git cherry-pick <commit of the fix on main>
+git push -u origin HEAD
+```
+
+Then run the `Publish Docs` workflow on that branch from the Actions tab. If the tag predates the workflow, cherry-pick the commit that added it too. The workflow refuses `main`, and branches that change files outside `docs/`, `.github/` and `README.md`.
