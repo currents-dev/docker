@@ -195,6 +195,8 @@ services:
       - .env
     environment:
       CURRENTS_ENV: onprem
+      # Reads test steps from ClickHouse when STEPS_CLICKHOUSE_* is set.
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
       FILE_STORAGE_FORCE_PATH_STYLE: "true"
     depends_on:
       mongodb:

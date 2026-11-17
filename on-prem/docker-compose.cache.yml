@@ -161,6 +161,8 @@ services:
       - .env
     environment:
       CURRENTS_ENV: onprem
+      # Reads test steps from ClickHouse when STEPS_CLICKHOUSE_* is set.
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_CURRENTS_PASSWORD}
     depends_on:
       redis:
         condition: service_started

@@ -148,6 +148,63 @@ To turn the worker off, remove `ai` from `COMPOSE_PROFILES` and run `docker comp
 | `AI_QUEUE_CONCURRENCY` | int | `5` | AI tasks run at the same time |
 | `USE_MOCK_AI` | bool | `false` | Return mock answers without calling an LLM (testing) |
 
+### Test Steps in ClickHouse (Optional)
+
+Currents can keep the steps of each test attempt in ClickHouse instead of object storage. It is off by default: until you set a time below, steps stay in object storage. Add the variables to `.env`; every service reads it, so they all get the same values.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` | timestamp | _(empty)_ | Tests that start at or after this time write their steps to ClickHouse and to object storage. The dashboard and AI read them from object storage once Redis no longer has them. Read by `director` and `write-worker` |
+| `STEPS_CLICKHOUSE_ONLY_FROM` | timestamp | _(empty)_ | Tests that start at or after this time write steps to ClickHouse only, and read them from there. It wins over `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` when both match. Read by `director` and `write-worker` |
+| `STEPS_RETENTION_DAYS` | int | `21` | Days steps stay in ClickHouse: 7, 14, 21, 30, 60, 90, 180 or 365. Other values round up. Applies to steps inserted after `write-worker` restarts. To change it, see [Changing the retention](#changing-the-retention). Read by `write-worker` |
+
+Both times are ISO 8601 with a timezone, such as `2026-12-01T00:00:00Z`. The services read them at startup, so set a time that has not come yet, and recreate the containers before it comes. A service still on the old value chooses the storage differently for tests that start after the new time. Tests that started before the time you set keep their steps in object storage. Steps in ClickHouse are deleted after the retention period.
+
+There is no separate test-record ingestion service on Compose: `director` does that work.
+
+To turn it on:
+
+1. Upgrade to images that include this feature (see [Upgrading](./upgrading.md)). `scheduler` creates the `test_attempt_steps` table in ClickHouse when it starts, and the table stays empty until you set a time.
+2. Check that `write-worker`, `api` and `ai-queue-worker` reach ClickHouse. They get `CLICKHOUSE_URL` and `CLICKHOUSE_USERNAME` from `.env`, and `CLICKHOUSE_PASSWORD` from `CLICKHOUSE_CURRENTS_PASSWORD`. `api` and `ai-queue-worker` read steps from ClickHouse, and `write-worker` inserts them:
+
+   ```bash
+   docker compose exec write-worker printenv | grep CLICKHOUSE_
+   docker compose exec api printenv | grep CLICKHOUSE_
+   docker compose exec ai-queue-worker printenv | grep CLICKHOUSE_
+   ```
+
+   `ai-queue-worker` runs only with the `ai` profile (see [AI Explanations and Chat](#ai-explanations-and-chat-optional)). With your own ClickHouse, `CLICKHOUSE_URL` must be reachable from all three containers.
+3. Set `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` to a future time in `.env`, and `STEPS_RETENTION_DAYS` if 21 days is not right. Run `docker compose up -d` to recreate the containers.
+4. After that time, run tests, then query `test_attempt_steps` in ClickHouse directly for tests that started after it:
+
+   ```sql
+   SELECT record_id, attempt, step_count
+   FROM default.test_attempt_steps
+   WHERE started_at >= toDateTime64('2026-12-01 00:00:00', 3, 'UTC')
+   ORDER BY started_at DESC
+   LIMIT 20
+   ```
+
+   Every completed attempt that has steps must have a row, and its `step_count` must match the steps in its object storage file, `<orgId>/steps/<runId>/<recordId>/<attempt>.json.gz`. The dashboard reads object storage for these tests, so it does not show whether ClickHouse has them.
+5. Set `STEPS_CLICKHOUSE_ONLY_FROM` to a future time, and run `docker compose up -d` again.
+
+Do not set `STEPS_CLICKHOUSE_ONLY_FROM` unless `write-worker`, `api` and `ai-queue-worker` reach ClickHouse. Without it `write-worker` cannot insert steps and nothing else holds them, so the steps of those tests are lost. The dashboard and AI show no steps when `api` or `ai-queue-worker` cannot read them.
+
+#### Changing the retention
+
+To change `STEPS_RETENTION_DAYS`, stop `write-worker`, change `.env`, then start it. If you run more than one `write-worker`, stop all of them first. Writers restarted one at a time can store two versions of one test with different expiry dates.
+
+```bash
+docker compose stop write-worker
+# Wait until docker compose ps -a shows write-worker as exited, so in-flight inserts finish
+# edit STEPS_RETENTION_DAYS in .env
+docker compose up -d write-worker
+```
+
+#### Going back
+
+To go back, empty both times in `.env` and run `docker compose up -d`. New tests then write steps to object storage. Tests already stored in ClickHouse are still read from there.
+
 ### SAML SSO (Optional)
 
 Enable SAML single sign-on by setting the two required variables and mounting your IdP metadata file into `./data/sso`. See [Enable SAML SSO](sso-saml.md) for the full walkthrough. SSO turns on automatically once both required variables are set — there is no separate enable flag.
