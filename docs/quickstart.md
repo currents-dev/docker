@@ -11,11 +11,13 @@ This guide walks you through setting up Currents on-premises using Docker Compos
 
 ## Step 1: Clone the Repository
 
-Clone the [currents-dev/docker repository](https://github.com/currents-dev/docker):
+Clone the [currents-dev/docker repository](https://github.com/currents-dev/docker) and check out the latest release tag. `main` can hold compose file changes for images that are not released yet.
 
 ```bash
 git clone https://github.com/currents-dev/docker.git currents-docker
-cd currents-docker/on-prem
+cd currents-docker
+git checkout "$(git tag -l 'on-prem/*' --sort=-v:refname | head -1)"
+cd on-prem
 ```
 
 > **Tip:** You can [browse the repository on GitHub](https://github.com/currents-dev/docker/tree/main/on-prem) to explore the configuration files before cloning.

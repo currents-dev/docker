@@ -142,7 +142,7 @@ tar -czvf sso-backup-$(date +%Y%m%d).tar.gz data/sso/
 
 Before restoring, ensure you have:
 - Your backed up `.env` file (or recreate with the same credentials)
-- Your `docker-compose.yml` file (or [clone the repository](https://github.com/currents-dev/docker) and run setup)
+- Your `docker-compose.yml` file (or [clone the repository](https://github.com/currents-dev/docker), check out the `on-prem/<version>` tag you were running, and run setup)
 
 ### Full Restore
 

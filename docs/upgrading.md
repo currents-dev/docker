@@ -8,6 +8,8 @@ This guide covers upgrading your Currents on-prem deployment to a new version.
 2. Review any breaking changes or required configuration updates
 3. Back up your data (see [Backup and Restore](./backup-restore.md))
 
+Each release is a tag, `on-prem/<version>`. Upgrade by checking out the tag of the version you're upgrading to, not by pulling `main`: `main` can hold compose file changes for images that are not released yet. List the releases with `git tag -l 'on-prem/*' --sort=-v:refname`.
+
 ## Upgrade Types
 
 Every update ends with `docker compose up -d`. Then check that the scheduler logged `Startup tasks complete`, as in [Database migration issues](#database-migration-issues): if a migration failed, the services keep running but the remaining migrations wait for a scheduler restart.
@@ -38,8 +40,9 @@ When the CHANGELOG indicates compose file changes:
 ```bash
 cd on-prem
 
-# Pull latest repository changes
-git pull
+# Check out the release you're upgrading to
+git fetch --tags
+git checkout on-prem/<version>
 
 # Update DC_CURRENTS_IMAGE_TAG in your .env file to the new version
 # Check VERSION file for the current release version: cat VERSION
@@ -47,7 +50,7 @@ git pull
 # Regenerate your compose file (if using custom profile)
 ./scripts/generate-compose.sh <your-profile>
 
-# Or if using a pre-generated profile, it's already updated by git pull
+# Or if using a pre-generated profile, checking out the tag updated it
 
 # Pull the new images while the running version keeps serving
 docker compose pull
@@ -65,8 +68,9 @@ When the CHANGELOG indicates new environment variables:
 ```bash
 cd on-prem
 
-# Pull latest repository changes
-git pull
+# Check out the release you're upgrading to
+git fetch --tags
+git checkout on-prem/<version>
 
 # Check for missing variables and version discrepancies
 ./scripts/check-env.sh
@@ -284,7 +288,8 @@ With the indexes already built, the upgrade only drops the two old `instances` i
 
    ```bash
    cd on-prem
-   git pull
+   git fetch --tags
+   git checkout on-prem/<version>
 
    # Lists the variables your .env is missing. Add them: the CHANGELOG's
    # 2026-10-14-001 New Environment Variables says what each one does
@@ -294,7 +299,7 @@ With the indexes already built, the upgrade only drops the two old `instances` i
    cat VERSION
 
    # Only if setup built a custom configuration; the full, database and cache
-   # files are updated by git pull. Pass the services in your compose file's
+   # files are updated by the checkout. Pass the services in your compose file's
    # name as separate words: for docker-compose.redis-mongodb.yml, run
    # ./scripts/generate-compose.sh redis mongodb
    ./scripts/generate-compose.sh <services>
@@ -325,8 +330,8 @@ cd on-prem
 # Stop services
 docker compose down
 
-# Checkout the previous version
-git checkout <previous-tag-or-commit>
+# Check out the previous release
+git checkout on-prem/<previous-version>
 
 # Regenerate compose file if needed
 ./scripts/generate-compose.sh <your-profile>

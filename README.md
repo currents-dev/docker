@@ -13,7 +13,12 @@ Set up Currents in self-hosted environments using Docker Compose.
 
 ## Quickstart
 
+Install from the latest release tag. `main` can hold compose file changes for images that are not released yet.
+
 ```bash
+git clone https://github.com/currents-dev/docker.git currents-docker
+cd currents-docker
+git checkout "$(git tag -l 'on-prem/*' --sort=-v:refname | head -1)"
 cd on-prem
 ./scripts/setup.sh
 docker compose up -d

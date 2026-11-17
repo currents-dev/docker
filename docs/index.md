@@ -21,11 +21,13 @@ Docker Compose configuration for self-hosted Currents deployment.
 
 ## Quick Setup
 
-Clone the [currents-dev/docker repository](https://github.com/currents-dev/docker) and run setup:
+Clone the [currents-dev/docker repository](https://github.com/currents-dev/docker), check out the latest release tag, and run setup:
 
 ```bash
 git clone https://github.com/currents-dev/docker.git currents-docker
-cd currents-docker/on-prem
+cd currents-docker
+git checkout "$(git tag -l 'on-prem/*' --sort=-v:refname | head -1)"
+cd on-prem
 ./scripts/setup.sh
 docker compose up -d
 ```
