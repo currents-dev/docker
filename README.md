@@ -107,4 +107,4 @@ git cherry-pick <commit of the fix on main>
 git push -u origin HEAD
 ```
 
-Then run the `Publish Docs` workflow on that branch from the Actions tab. If the tag predates the workflow, cherry-pick the commit that added it too. The workflow refuses `main`, and branches that change files outside `docs/`, `.github/` and `README.md`.
+Then run the `Publish Docs` workflow on that branch from the Actions tab. If the tag predates the workflow, cherry-pick the commit that added it too. The workflow refuses `main`, branches not based on the latest release, and branches that change files outside `docs/`, `.github/` and `README.md`.
