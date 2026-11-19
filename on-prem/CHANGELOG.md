@@ -6,11 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Breaking Changes
+- Test steps are stored in ClickHouse only. `write-worker` inserts the steps of each test attempt into the ClickHouse table `test_attempt_steps`, and `api` and `ai-queue-worker` read them from there. Currents does not write or read steps in object storage or MongoDB. Tests recorded before the upgrade show no steps in the dashboard, AI or MCP. Their step files under `<orgId>/steps/` in the bucket are not read, and you can delete them. See Test Steps in ClickHouse in the [Configuration Reference](../docs/configuration.md#test-steps-in-clickhouse).
+
+### Upgrade Notes
+- Before upgrading, check that `write-worker`, `api` and `ai-queue-worker` reach ClickHouse with `CLICKHOUSE_URL`, `CLICKHOUSE_USERNAME` and `CLICKHOUSE_PASSWORD`. If `write-worker` cannot, the steps of new tests are lost. If `api` or `ai-queue-worker` cannot, no steps show once Redis no longer has them, after about 2 hours. The check commands are in the [Configuration Reference](../docs/configuration.md#test-steps-in-clickhouse).
+- `scheduler` creates the `test_attempt_steps` table when it starts.
+
 ### Compose File Changes
 - `ai-queue-worker` gets `CLICKHOUSE_PASSWORD` from `CLICKHOUSE_CURRENTS_PASSWORD`, as `api` and `write-worker` do, so it can read test steps from ClickHouse. Regenerate your compose file if you use custom templates.
 
-### Added
-- **Test steps in ClickHouse, off by default.** `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` and `STEPS_CLICKHOUSE_ONLY_FROM` in `.env` choose, by the time a test starts, whether its steps go to ClickHouse as well as object storage, or to ClickHouse only. `STEPS_RETENTION_DAYS` sets how long `write-worker` keeps them (default 21). Nothing changes until you set a time. Needs images that include the feature; see Test Steps in ClickHouse in the [Configuration Reference](../docs/configuration.md#test-steps-in-clickhouse-optional).
+### New Environment Variables
+- `STEPS_RETENTION_DAYS` (default `21`): days steps stay in ClickHouse. Read by `write-worker`.
+
+### Removed Environment Variables
+- `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` and `STEPS_CLICKHOUSE_ONLY_FROM`. The images do not read them. If you set them in `.env`, remove them.
 
 ## [2026-11-10-003] - 2026-11-13
 
