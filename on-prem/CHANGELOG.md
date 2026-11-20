@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **Test steps in ClickHouse, off by default.** `STEPS_CLICKHOUSE_DUAL_WRITE_FROM` and `STEPS_CLICKHOUSE_ONLY_FROM` in `.env` choose, by the time a test starts, whether its steps go to ClickHouse as well as object storage, or to ClickHouse only. `STEPS_RETENTION_DAYS` sets how long `write-worker` keeps them (default 21). Nothing changes until you set a time. Needs images that include the feature; see Test Steps in ClickHouse in the [Configuration Reference](../docs/configuration.md#test-steps-in-clickhouse-optional).
+- **CI OIDC token exchange, off by default.** `OIDC_TOKEN_EXCHANGE_ENABLED` and `OIDC_TOKEN_AUDIENCE` let a CI job get a record key from its CI provider's OIDC token; `OIDC_API_TOKEN_EXCHANGE_ENABLED` and `OIDC_API_TOKEN_AUDIENCE` do the same for an API token; `OIDC_API_POLICIES_ENABLED` lets admins add API trust policies in the dashboard. `OIDC_EXTRA_ISSUERS` adds self-managed GitLab and GitHub Enterprise Server, and `OIDC_TRUST_FORWARDED_FOR` sets how the director counts requests per address. The services read them from `.env`; nothing changes until you set them. Needs images that include the feature; see CI OIDC Token Exchange in the [Configuration Reference](../docs/configuration.md#ci-oidc-token-exchange-optional).
 
 ## [2026-11-10-003] - 2026-11-13
 
