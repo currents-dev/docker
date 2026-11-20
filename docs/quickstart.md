@@ -174,7 +174,7 @@ See [Enable SAML SSO](./sso-saml.md) for the full walkthrough.
 
 ### CI OIDC token exchange (optional)
 
-To let CI jobs get a record key from the OIDC token their CI provider issues, instead of storing a record key as a CI secret, set `OIDC_TOKEN_EXCHANGE_ENABLED=true` and `OIDC_TOKEN_AUDIENCE` to a name you choose, such as `currents:record-key:<company>`, and ask for the same name as the audience in the CI jobs. It is off by default, needs the director to reach the CI providers over the internet (or the self-managed GitLab and GitHub Enterprise Server instances you list in `OIDC_EXTRA_ISSUERS`), and has requirements to read first: see [CI OIDC Token Exchange](./configuration.md#ci-oidc-token-exchange-optional).
+To let CI jobs get a record key from the OIDC token their CI provider issues, instead of storing a record key as a CI secret, set `OIDC_TOKEN_EXCHANGE_ENABLED=true` and `OIDC_TOKEN_AUDIENCE` to a name you choose, such as `currents:record-key:<company>`, and ask for the same name as the audience in the CI jobs. It is off by default, needs the director to reach the CI providers over the internet (or the self-managed GitLab and GitHub Enterprise Server instances you list in `OIDC_EXTRA_ISSUERS`), and has requirements to read first: see [CI OIDC Token Exchange](./configuration.md#ci-oidc-token-exchange-optional). The same page covers exchanging the token for an API token, which has its own switches: `OIDC_API_TOKEN_EXCHANGE_ENABLED`, `OIDC_API_TOKEN_AUDIENCE` and `OIDC_API_POLICIES_ENABLED`.
 
 See [Configuration Reference](./configuration.md) for all available options.
 
